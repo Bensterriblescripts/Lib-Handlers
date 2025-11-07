@@ -50,7 +50,8 @@ keyvaluepair := ReadConfig()
 
 ---
 Error Handling - This here ismain purpose of the library.
-Golangs error handling sucks, you cannot tell me otherwise. Better than some others I suppose.
+Golangs error handling sucks, you cannot tell me otherwise. 
+Better than some others I suppose.
 
 See logging/errors.go for the functions.
 Call the error handlers for functions that only return error 
