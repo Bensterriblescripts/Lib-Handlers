@@ -49,13 +49,13 @@ keyvaluepair := ReadConfig()
 ```
 
 ---
-*Error Handling*
+**Error Handling**
 
 This here is main purpose of the library.
 Golangs error handling sucks, you cannot tell me otherwise. 
 
 See logging/errors.go for the functions.
-Call the error handlers for functions that only return error 
+*Functions with Err expect only (error), functions with Error expect (T, error)*
 ```go
 if ErrExists(thisFunction) {
     // Handle error, log has already been created.
