@@ -16,6 +16,7 @@ Such as:
  - Guid types
  - SSH Tunneling and key access
  - Windows API HWND retrieval and changes (for manipulating active program's window state)
+ - OpenAI request format (responses endpoint, not completions)
 
 ---
 
