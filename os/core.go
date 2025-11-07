@@ -1,4 +1,4 @@
-package os
+package osapi
 
 import (
 	"os"
@@ -9,20 +9,20 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
-func Run(command string) string {
+func Run(command string) (string, bool) {
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command("powershell.exe", "-Command", command)
 		if out, err := ErrorExists(cmd.CombinedOutput()); err {
-			return ""
+			return string(out), false
 		} else {
-			return string(out)
+			return string(out), true
 		}
 	} else {
 		cmd := exec.Command("bash", "-c", command)
 		if out, err := ErrorExists(cmd.CombinedOutput()); err {
-			return ""
+			return string(out), false
 		} else {
-			return string(out)
+			return string(out), true
 		}
 	}
 }

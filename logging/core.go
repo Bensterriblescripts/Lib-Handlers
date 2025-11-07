@@ -17,7 +17,6 @@ func InitLogs() {
 	if _, err := os.Stat(BaseLogsFolder); os.IsNotExist(err) {
 		PanicErr(os.MkdirAll(BaseLogsFolder, 0755))
 	}
-
 	go func() {
 		for {
 			time.Sleep(30 * time.Second)
@@ -27,6 +26,8 @@ func InitLogs() {
 	}()
 }
 func InitVars() {
+
+	ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
 	if runtime.GOOS == "windows" {
 		UserProfile = os.Getenv("USERPROFILE")
 		if UserProfile == "" {
@@ -47,6 +48,9 @@ func InitChangeLog(filename string) {
 	ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 }
 func InitTraceLog(filename string) {
+	if !TraceDebug {
+		return
+	}
 	TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 }
 func SetLogsFolder(foldername string) {
@@ -115,6 +119,9 @@ func ChangeLog(message string, idnumber string) {
 	PrintLogs(false, message, ChangeLogFile)
 }
 func TraceLog(message string) {
+	if !TraceDebug {
+		return
+	}
 	if TraceLogFile == nil {
 		currentday := GetDay()
 		InitTraceLog(BaseLogsFolder + "trace-" + currentday + ".log")
@@ -158,7 +165,7 @@ func PrintLogs(trace bool, message string, logfile *os.File) {
 	PanicError(fmt.Fprintln(multiWriter, message))
 }
 func RotateLogs(logFolder string) {
-	if DevelopmentMode {
+	if TraceDebug {
 		return
 	}
 	files, err := os.ReadDir(logFolder)
