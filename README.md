@@ -36,7 +36,8 @@ keyvaluepair := ReadConfig()
 The main purpose of this library is to smooth out error handling.
 See logging/errors.go for the functions
 
-Call the error handlers like so for functions that only return error
+Call the error handlers for functions that only return error
+
 if ErrExists(thisFunction) {
   // Do something
 }
