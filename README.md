@@ -45,20 +45,24 @@ Error Handling The main purpose of this library is to smooth out error handling.
 See logging/errors.go for the functions.
 Call the error handlers for functions that only return error 
 ```go
-if `ErrExists(thisFunction) {
-    // Do something
+if ErrExists(thisFunction) {
+    // Handle error, log has already been created.
 }
 ```
 This will log the error to error log file and stdout, as well as acting as an operand. 
 For functions that return (type, error). 
 ```go
-if var, err := ErrorExists(thisFunction) {
-    // Do Something
+if var, failed := ErrorExists(thisFunction); failed {
+    // Handle error, log has already been created.
+} else {
+    // Use our var as normal
 }
 ```
 Again, this will log the error to both the logfile and stdout. 
-The other functions perform similar tasks. 
+The other functions perform similar tasks.
+
 Functions with Error expects a return of (T, error) and Err only expects only (error) to be returned. 
 `PanicErr(functionMustSucceed);` `ErrExists(functionMightErrorButWeDontCare);` `PrintErr(functionMightErrorButOnlyLogIt);` 
+
 All of these functions write to the error log and stdout, `Panic()` can be called directly to write to an errorlog and exit the program.
 YOU MUST HANDLE YOUR DEFERS before using this function.
