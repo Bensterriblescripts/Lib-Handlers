@@ -1,4 +1,4 @@
-package stream
+package httpstream_test
 
 import (
 	"fmt"
