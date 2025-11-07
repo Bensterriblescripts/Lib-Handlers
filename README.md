@@ -61,7 +61,8 @@ if ErrExists(thisFunction) {
     // Handle error, log has already been created.
 }
 ```
-This will log the error to C:\Local\Logs\*AppName*\errorlog-datetime.log and stdout, as well as acting as an operand. 
+This will log the error to C:\Local\Logs\*AppName*\error.log and stdout.
+
 For functions that return (type, error). 
 ```go
 if var, failed := ErrorExists(thisFunction); failed {
