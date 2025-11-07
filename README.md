@@ -75,7 +75,13 @@ Again, this will log the error to both the logfile and stdout.
 The other functions perform similar tasks.
 
 Functions with Error expects a return of (T, error) and Err only expects only (error) to be returned. 
-`PanicErr(functionMustSucceed);` `ErrExists(functionShouldBeCheckedForFailing);` `PrintErr(justLogTheErrorWeDontCare);` 
+ - `PanicErr(functionMustSucceed);`
+ - `ErrExists(functionShouldBeCheckedForFailing);`
+ - `PrintErr(justLogTheErrorWeDontCare);`
+ 
+ - `PanicError(functionMustSucceed);`
+ - `ErrorExists(functionShouldBeCheckedForFailing);`
+ - `PrintError(justLogTheErrorWeDontCare);`
 
 ---
 
