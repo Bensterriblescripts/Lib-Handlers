@@ -40,7 +40,7 @@ func main() {
 
 You can create a new config with any key->value pair of type: map[string]string. 
 ```go
-WriteConfig(path, yourmap)
+WriteConfig(yourmap)
 ```
 If there is a previous config, it will overwrite the existing values and retain the values that were not present in the map parameter. 
 Read the map[string]string config with:
