@@ -1,4 +1,4 @@
-# 🪟 Windows Utility Library
+# 🪟 Windows Utility Library for Golang
 
 [![Go Version](https://img.shields.io/badge/Go-%3E%3D1.22-blue?logo=go)](https://golang.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?logo=windows)]()
@@ -20,7 +20,7 @@ Such as:
 
 ---
 
-Right after entering `main()`, declare your required variables and call `InitLogs()`:
+Right after entering `main()`, you need to declare some mandatory variables as well as `InitLogs()`:
 
 ```go
 package main
