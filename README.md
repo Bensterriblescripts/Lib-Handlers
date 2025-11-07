@@ -9,7 +9,7 @@
 
 ---
 
-This library provides helper, the core focus is on error handling and logging but also has functions I use regularly.
+This library is focused is on error handling with logs, but also has functions I use regularly.
 Such as:
  - OAuth2 access token retrieval
  - Dataverse odata requests
