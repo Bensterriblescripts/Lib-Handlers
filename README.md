@@ -9,10 +9,14 @@
 
 ---
 
-This library provides helper functions similar to what you’d find in other standard libraries, plus some trimmed down standard functions.
+This library provides helper, the core focus is on error handling and logging but also has functions I use regularly.
+Such as:
+ - OAuth2 access token retrieval
+ - Dataverse odata requests
+ - Guid types
+ - SSH Tunneling and key access
+ - Windows API HWND retrieval and changes (for manipulating active program's window state)
 
-It’s intended for almost all projects, however the main purpose is to significantly improve logging and error handling. Yes another one of those.
-All error handling writes to the a logfile and stdout.
 
 ---
 
@@ -65,13 +69,6 @@ Functions with Error expects a return of (T, error) and Err only expects only (e
 `PanicErr(functionMustSucceed);` `ErrExists(functionMightErrorButWeDontCare);` `PrintErr(functionMightErrorButOnlyLogIt);` 
 
 ---
-
-Aside from that, there are other functions I use regularly:
- - OAuth2 access token retrieval
- - Dataverse odata requests
- - Guid types
- - SSH Tunneling and key access
- - Windows API HWND retrieval and changes (for manipulating active program's window state)
 
 All of these functions write to the error log and stdout, `Panic()` can be called directly to write to an errorlog and exit the program.
 YOU MUST HANDLE YOUR DEFERS before using this function.
