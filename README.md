@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 [![Status](https://img.shields.io/badge/Status-Experimental-orange)]()
 
-> This library is **Windows-only**. It’s heavily tailored to my personal needs — but if you’re brave enough to use it, here’s what you should know before giving up after the first compiler error.
+> This library is **Windows-only** and heavily tailored to my personal needs. If you're willing to try, I've detailed the main uses and initial setup below.
 
 ---
 
@@ -17,7 +17,8 @@ Such as:
  - SSH Tunneling and key access
  - Windows API HWND retrieval and changes (for manipulating active program's window state)
 
-
+---
+run `go get github.com/Bensterriblescripts/Lib-Handlers@latest`
 ---
 
 Right after entering `main()`, you need to declare some mandatory variables as well as `InitLogs()`:
