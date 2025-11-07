@@ -18,7 +18,9 @@ Such as:
  - Windows API HWND retrieval and changes (for manipulating active program's window state)
 
 ---
+
 run `go get github.com/Bensterriblescripts/Lib-Handlers@latest`
+
 ---
 
 Right after entering `main()`, you need to declare some mandatory variables as well as `InitLogs()`:
