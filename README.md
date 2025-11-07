@@ -64,5 +64,14 @@ The other functions perform similar tasks.
 Functions with Error expects a return of (T, error) and Err only expects only (error) to be returned. 
 `PanicErr(functionMustSucceed);` `ErrExists(functionMightErrorButWeDontCare);` `PrintErr(functionMightErrorButOnlyLogIt);` 
 
+---
+
+Aside from that, there are other functions I use regularly:
+ - OAuth2 access token retrieval
+ - Dataverse odata requests
+ - Guid types
+ - SSH Tunneling and key access
+ - Windows API HWND retrieval and changes (for manipulating active program's window state)
+
 All of these functions write to the error log and stdout, `Panic()` can be called directly to write to an errorlog and exit the program.
 YOU MUST HANDLE YOUR DEFERS before using this function.
