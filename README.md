@@ -61,7 +61,7 @@ if ErrExists(thisFunction) {
     // Handle error, log has already been created.
 }
 ```
-This will log the error to C:\Local\Logs\*AppName*\error.log and stdout.
+This will log the error to C:\Local\Logs\\*AppName\*\error-datestring.log and stdout.
 
 For functions that return (type, error). 
 ```go
