@@ -5,6 +5,7 @@ It contains helper functions that you might find in other language standard libr
 
 
 /** Right after entering main() **/
+
 Declare InitLogs() within your main entry point after declaring the variables noted in logging/vars.go.
 As of writing, the variables required before InitLogs() are:
 var AppName string = "Default"
@@ -24,7 +25,9 @@ This will overwrite existing values, but will also leave anything keys that are 
 Read the map[string]string config with:
 keyvaluepair := ReadConfig()
 
+
 /** Error Handling **/
+
 The main purpose of this library is to smooth out error handling.
 See logging/errors.go for the functions
 
