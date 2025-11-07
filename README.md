@@ -34,7 +34,7 @@ You can create a new config with any key->value pair of type: map[string]string.
 ```go
 WriteConfig(path, yourmap)
 ```
-This will overwrite existing values, but will also leave anything keys that are not in the map you just wrote to file. 
+If there is a previous config, it will overwrite the existing values and retain the values that were not present in the map parameter. 
 Read the map[string]string config with:
 ```go
 keyvaluepair := ReadConfig()
@@ -57,4 +57,8 @@ if var, err := ErrorExists(thisFunction) {
 }
 ```
 Again, this will log the error to both the logfile and stdout. 
-The other functions perform similar tasks. Functions with Error expects a return of (T, error) and Err only expects only (error) to be returned. PanicErr(functionMustSucceed); ErrExists(functionMightErrorButWeDontCare); PrintErr(functionMightErrorButOnlyLogIt); All of these functions write to the error log and stdout, Panic() can be called directly to write to an errorlog and os.Exit with a random number.
+The other functions perform similar tasks. 
+Functions with Error expects a return of (T, error) and Err only expects only (error) to be returned. 
+`PanicErr(functionMustSucceed);` `ErrExists(functionMightErrorButWeDontCare);` `PrintErr(functionMightErrorButOnlyLogIt);` 
+All of these functions write to the error log and stdout, `Panic()` can be called directly to write to an errorlog and exit the program.
+YOU MUST HANDLE YOUR DEFERS before using this function.
