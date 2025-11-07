@@ -2,7 +2,9 @@ For any poor sod who decides to use this library, I tailored it to my own needs,
 Heavy warning, this library is for Windows only.
 
 It contains helper functions that you might find in other language standard libraries or reduce the error handling required for existing functions.
-/n
+
+
+
 
 /** Right after entering main() **/
 
@@ -24,6 +26,9 @@ This will overwrite existing values, but will also leave anything keys that are 
 
 Read the map[string]string config with:
 keyvaluepair := ReadConfig()
+
+
+
 
 
 /** Error Handling **/
