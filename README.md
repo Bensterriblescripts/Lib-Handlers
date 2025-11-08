@@ -1,6 +1,6 @@
 # 🪟 Windows Utility Library for Golang
 
-[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.22-blue?logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.25.3-blue?logo=go)](https://golang.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey?logo=windows)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 [![Status](https://img.shields.io/badge/Status-Experimental-orange)]()
