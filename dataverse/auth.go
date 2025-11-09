@@ -25,22 +25,20 @@ var ClientSecret string
 var TenantID guid.Guid
 var Endpoint string
 
-var CurrentAccessToken Token
-
-func Authenticate() { // Should be run on a cache timer or on low demand requests
+func Authenticate() Token { // Should be run on a cache timer or on low demand requests
 	TraceLog("Authenticating...")
 
 	newtoken := GetAccessToken()
 	if newtoken == (Token{}) {
 		ErrorLog("Failed to get access token")
-		return
+		return Token{}
 	} else if newtoken != (Token{}) {
 		if newtoken.AccessToken == "" {
 			ErrorLog("Failed to get access token")
-			return
+			return Token{}
 		} else {
 			TraceLog("Retrieved new access token")
-			CurrentAccessToken = newtoken
+			return newtoken
 		}
 	}
 }

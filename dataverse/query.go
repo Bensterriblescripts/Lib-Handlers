@@ -10,13 +10,15 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
-func Request(table string, params string) []byte {
-	if CurrentAccessToken.AccessToken == "" {
-		Authenticate()
-		if CurrentAccessToken == (Token{}) {
-			ErrorLog("Failed to get access token")
+func Request(token Token, table string, params string) []byte {
+	if token.AccessToken == "" {
+		ErrorLog("Access token is empty, attempting to retrieve new token.")
+		token = Authenticate()
+		if token == (Token{}) {
+			ErrorLog("Failed to retrieve new token")
 			return nil
 		}
+		return nil
 	}
 
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
@@ -28,7 +30,7 @@ func Request(table string, params string) []byte {
 		ErrorLog("Failed to create request: " + url)
 		return nil
 	} else {
-		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
+		req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
@@ -69,11 +71,12 @@ func Request(table string, params string) []byte {
 		}
 	}
 }
-func Create(table string, data []byte) []byte {
-	if CurrentAccessToken.AccessToken == "" {
-		Authenticate()
-		if CurrentAccessToken == (Token{}) {
-			ErrorLog("Failed to get access token")
+func Create(token Token, table string, data []byte) []byte {
+	if token.AccessToken == "" {
+		ErrorLog("Access token is empty, attempting to retrieve new token.")
+		token = Authenticate()
+		if token == (Token{}) {
+			ErrorLog("Failed to retrieve new token")
 			return nil
 		}
 	}
@@ -84,7 +87,7 @@ func Create(table string, data []byte) []byte {
 		ErrorLog("Failed to create request: " + url)
 		return nil
 	} else {
-		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
+		req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
