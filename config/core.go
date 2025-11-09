@@ -77,6 +77,10 @@ func OverwriteConfig(newconfigmap map[string]string) {
 		}
 	}
 
+	if len(currentconfigmap) == 0 {
+		return
+	}
+
 	if !WriteConfig(currentconfigmap) {
 		ErrorLog("Failed to write the config file")
 		return
