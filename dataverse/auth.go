@@ -53,14 +53,25 @@ func GetAccessToken() Token {
 		"scope":         {Endpoint},
 	}
 
+	if NetworkDebug {
+		TraceLog("Sending request to: " + tokenurl)
+		TraceLog("Data: " + data.Encode())
+	}
 	resp := PanicError(http.PostForm(tokenurl, data))
+	if NetworkDebug {
+		TraceLog("Response: " + resp.Status)
+		TraceLog("Response Headers:")
+		for key, value := range resp.Header {
+			TraceLog(fmt.Sprintf("%s: %s", key, value))
+		}
+	}
+
 	defer resp.Body.Close()
 	body := PanicError(io.ReadAll(resp.Body))
 	if ErrExists(json.Unmarshal(body, &token)) {
 		ErrorLog("Failed to deserialize response")
 		return Token{}
-	}
-	if token.AccessToken == "" {
+	} else if token.AccessToken == "" {
 		ErrorLog("Failed to get access token")
 		return Token{}
 	} else {
