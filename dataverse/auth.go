@@ -50,7 +50,7 @@ func GetAccessToken() Token {
 		"grant_type":    {"client_credentials"},
 		"client_id":     {ClientID.String},
 		"client_secret": {ClientSecret},
-		"scope":         {Endpoint},
+		"scope":         {Endpoint + "/.default"},
 	}
 
 	if NetworkDebug {
