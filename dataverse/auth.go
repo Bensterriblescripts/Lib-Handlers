@@ -25,23 +25,21 @@ var ClientSecret string
 var TenantID guid.Guid
 var Endpoint string
 
+var CurrentAccessToken Token
+
 func Authenticate() Token { // Should be run on a cache timer or on low demand requests
 	TraceLog("Authenticating...")
 
 	newtoken := GetAccessToken()
 	if newtoken == (Token{}) {
 		ErrorLog("Failed to get access token")
-		return Token{}
+		return newtoken
 	} else if newtoken != (Token{}) {
-		if newtoken.AccessToken == "" {
-			ErrorLog("Failed to get access token")
-			return Token{}
-		} else {
-			TraceLog("Retrieved new access token")
-			return newtoken
-		}
+		TraceLog("Retrieved new access token")
+		CurrentAccessToken = newtoken
+		return newtoken
 	}
-	return Token{}
+	return CurrentAccessToken
 }
 func GetAccessToken() Token {
 	var token Token
@@ -69,10 +67,7 @@ func GetAccessToken() Token {
 	defer resp.Body.Close()
 	body := PanicError(io.ReadAll(resp.Body))
 	if ErrExists(json.Unmarshal(body, &token)) {
-		ErrorLog("Failed to deserialize response")
-		return Token{}
-	} else if token.AccessToken == "" {
-		ErrorLog("Failed to get access token")
+		ErrorLog("Failed to deserialize response " + string(body))
 		return Token{}
 	} else {
 		TraceLog("Retrieved Azure access token")

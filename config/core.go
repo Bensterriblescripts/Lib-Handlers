@@ -69,12 +69,8 @@ func OverwriteConfig(newconfigmap map[string]string) {
 		return
 	}
 	currentconfigmap := ReadConfig()
-	for key, _ := range currentconfigmap {
-		if _, exists := newconfigmap[key]; exists {
-			currentconfigmap[key] = newconfigmap[key]
-		} else {
-			delete(currentconfigmap, key)
-		}
+	for newkey, newvalue := range newconfigmap {
+		currentconfigmap[newkey] = newvalue
 	}
 
 	if len(currentconfigmap) == 0 {

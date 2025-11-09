@@ -10,17 +10,7 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
-func Request(token Token, table string, params string) []byte {
-	if token.AccessToken == "" {
-		ErrorLog("Access token is empty, attempting to retrieve new token.")
-		token = Authenticate()
-		if token == (Token{}) {
-			ErrorLog("Failed to retrieve new token")
-			return nil
-		}
-		return nil
-	}
-
+func Request(table string, params string) []byte {
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 	if params != "" {
 		url += "?" + params
@@ -30,7 +20,7 @@ func Request(token Token, table string, params string) []byte {
 		ErrorLog("Failed to create request: " + url)
 		return nil
 	} else {
-		req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
@@ -71,23 +61,14 @@ func Request(token Token, table string, params string) []byte {
 		}
 	}
 }
-func Create(token Token, table string, data []byte) []byte {
-	if token.AccessToken == "" {
-		ErrorLog("Access token is empty, attempting to retrieve new token.")
-		token = Authenticate()
-		if token == (Token{}) {
-			ErrorLog("Failed to retrieve new token")
-			return nil
-		}
-	}
-
+func Create(table string, data []byte) []byte {
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 
 	if req, err := ErrorExists(http.NewRequest("POST", url, bytes.NewBuffer(data))); err { // Create request
 		ErrorLog("Failed to create request: " + url)
 		return nil
 	} else {
-		req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
