@@ -25,7 +25,7 @@ var ClientSecret string
 var TenantID guid.Guid
 var Endpoint string
 
-var ChangelogAccessToken Token
+var AccessToken Token
 
 func Authenticate() { // Should be run on a cache timer or on low demand requests
 	TraceLog("Authenticating...")
@@ -38,7 +38,7 @@ func Authenticate() { // Should be run on a cache timer or on low demand request
 
 	if newtoken != (Token{}) {
 		TraceLog("Retrieved new access token")
-		ChangelogAccessToken = newtoken
+		AccessToken = newtoken
 	}
 }
 func GetAccessToken() Token {
@@ -68,10 +68,10 @@ func GetAccessToken() Token {
 }
 func Request(table string, params string) []byte {
 	debugrequests := true // Show full request/response body and headers
-	token := ChangelogAccessToken.AccessToken
+	token := AccessToken.AccessToken
 	if token == "" {
 		Authenticate()
-		if ChangelogAccessToken == (Token{}) {
+		if AccessToken == (Token{}) {
 			ErrorLog("Failed to get access token")
 			return nil
 		}
@@ -129,10 +129,10 @@ func Request(table string, params string) []byte {
 }
 func Create(table string, data []byte) []byte {
 	debugrequests := true // Show full request/response body and headers
-	token := ChangelogAccessToken.AccessToken
+	token := AccessToken.AccessToken
 	if token == "" {
 		Authenticate()
-		if ChangelogAccessToken == (Token{}) {
+		if AccessToken == (Token{}) {
 			ErrorLog("Failed to get access token")
 			return nil
 		}
