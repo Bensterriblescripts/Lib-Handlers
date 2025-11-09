@@ -41,6 +41,7 @@ func Authenticate() Token { // Should be run on a cache timer or on low demand r
 			return newtoken
 		}
 	}
+	return Token{}
 }
 func GetAccessToken() Token {
 	var token Token
