@@ -8,7 +8,6 @@ import (
 var AppName string = "Default"
 var ExecutableName string = "Default"
 var TraceDebug bool = false
-var NetworkDebug bool = false
 var FileLogging bool = true
 
 /* Optional */

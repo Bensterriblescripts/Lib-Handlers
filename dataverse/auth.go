@@ -1,13 +1,11 @@
 package dataverse
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/Bensterriblescripts/Lib-Handlers/guid"
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -19,6 +17,8 @@ type Token struct {
 	ExtExpiresIn int    `json:"ext_expires_in"`
 	AccessToken  string `json:"access_token"`
 }
+
+var NetworkDebug bool = false
 
 var ClientID guid.Guid
 var ClientSecret string
@@ -64,124 +64,5 @@ func GetAccessToken() Token {
 	} else {
 		TraceLog("Retrieved Azure access token")
 		return token
-	}
-}
-func Request(table string, params string) []byte {
-	debugrequests := true // Show full request/response body and headers
-	token := AccessToken.AccessToken
-	if token == "" {
-		Authenticate()
-		if AccessToken == (Token{}) {
-			ErrorLog("Failed to get access token")
-			return nil
-		}
-	}
-
-	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
-	if params != "" {
-		url += "?" + params
-	}
-
-	if req, err := ErrorExists(http.NewRequest("GET", url, nil)); err { // Create request
-		ErrorLog("Failed to create request: " + url)
-		return nil
-	} else {
-		req.Header.Set("Authorization", "Bearer "+token)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("OData-MaxVersion", "4.0")
-		req.Header.Set("OData-Version", "4.0")
-
-		client := &http.Client{}
-		if resp, err := ErrorExists(client.Do(req)); err { // Send request
-			ErrorLog("CRM Request Failed: " + url)
-			return nil
-		} else {
-			defer resp.Body.Close()
-
-			if debugrequests {
-				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))
-				TraceLog("----------")
-				TraceLog("Response Headers:")
-				for key, value := range resp.Header {
-					TraceLog(fmt.Sprintf("%s: %s", key, value))
-				}
-				TraceLog("----------")
-			}
-
-			if body, err := ErrorExists(io.ReadAll(resp.Body)); err { // Read response
-				ErrorLog("Failed to read response body")
-				return nil
-			} else {
-				if debugrequests {
-					TraceLog("Response body:")
-					TraceLog(string(body))
-					TraceLog("----------")
-				}
-				if resp.StatusCode != 200 {
-					ErrorLog(fmt.Sprintf("HTTP Error %d: %s", resp.StatusCode, string(body)))
-					return nil
-				}
-				return body
-			}
-		}
-	}
-}
-func Create(table string, data []byte) []byte {
-	debugrequests := true // Show full request/response body and headers
-	token := AccessToken.AccessToken
-	if token == "" {
-		Authenticate()
-		if AccessToken == (Token{}) {
-			ErrorLog("Failed to get access token")
-			return nil
-		}
-	}
-
-	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
-
-	if req, err := ErrorExists(http.NewRequest("POST", url, bytes.NewBuffer(data))); err { // Create request
-		ErrorLog("Failed to create request: " + url)
-		return nil
-	} else {
-		req.Header.Set("Authorization", "Bearer "+token)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("OData-MaxVersion", "4.0")
-		req.Header.Set("OData-Version", "4.0")
-
-		client := &http.Client{}
-		if resp, err := ErrorExists(client.Do(req)); err { // Send request
-			ErrorLog("CRM Request Failed: " + url)
-			return nil
-		} else {
-			defer resp.Body.Close()
-
-			if debugrequests {
-				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))
-				TraceLog("----------")
-				TraceLog("Response Headers:")
-				for key, value := range resp.Header {
-					TraceLog(fmt.Sprintf("%s: %s", key, value))
-				}
-				TraceLog("----------")
-			}
-
-			if body, err := ErrorExists(io.ReadAll(resp.Body)); err { // Read response
-				ErrorLog("Failed to read response body")
-				return nil
-			} else {
-				if debugrequests {
-					TraceLog("Response body:")
-					TraceLog(string(body))
-					TraceLog("----------")
-				}
-				if resp.StatusCode != 200 {
-					ErrorLog(fmt.Sprintf("HTTP Error %d: %s", resp.StatusCode, string(body)))
-					return nil
-				}
-				return body
-			}
-		}
 	}
 }
