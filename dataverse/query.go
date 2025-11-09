@@ -11,10 +11,9 @@ import (
 )
 
 func Request(table string, params string) []byte {
-	token := AccessToken.AccessToken
-	if token == "" {
+	if CurrentAccessToken.AccessToken == "" {
 		Authenticate()
-		if AccessToken == (Token{}) {
+		if CurrentAccessToken == (Token{}) {
 			ErrorLog("Failed to get access token")
 			return nil
 		}
@@ -29,7 +28,7 @@ func Request(table string, params string) []byte {
 		ErrorLog("Failed to create request: " + url)
 		return nil
 	} else {
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
@@ -71,10 +70,9 @@ func Request(table string, params string) []byte {
 	}
 }
 func Create(table string, data []byte) []byte {
-	token := AccessToken.AccessToken
-	if token == "" {
+	if CurrentAccessToken.AccessToken == "" {
 		Authenticate()
-		if AccessToken == (Token{}) {
+		if CurrentAccessToken == (Token{}) {
 			ErrorLog("Failed to get access token")
 			return nil
 		}
@@ -86,7 +84,7 @@ func Create(table string, data []byte) []byte {
 		ErrorLog("Failed to create request: " + url)
 		return nil
 	} else {
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
