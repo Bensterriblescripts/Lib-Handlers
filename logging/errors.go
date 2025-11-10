@@ -80,7 +80,6 @@ func Panic(message string) {
 	if ErrorLogFile != nil {
 		fileWriters = append(fileWriters, ErrorLogFile)
 	}
-
 	multiWriter := io.MultiWriter(fileWriters...)
 
 	if len(fileWriters) > 0 {
