@@ -12,8 +12,13 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/time"
 )
 
+var errorLogWriter io.Writer
+var changeLogWriter io.Writer
+var traceLogWriter io.Writer
+
 func InitLogs() {
 	InitVars()
+
 	if _, err := os.Stat(BaseLogsFolder); os.IsNotExist(err) {
 		PanicErr(os.MkdirAll(BaseLogsFolder, 0755))
 	}
@@ -42,15 +47,30 @@ func InitVars() {
 }
 func InitErrorLog(filename string) {
 	ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	if ConsoleLogging {
+		errorLogWriter = io.MultiWriter(os.Stdout, ErrorLogFile)
+	} else {
+		errorLogWriter = ErrorLogFile
+	}
 }
 func InitChangeLog(filename string) {
 	ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	if ConsoleLogging {
+		changeLogWriter = io.MultiWriter(os.Stdout, ChangeLogFile)
+	} else {
+		changeLogWriter = ChangeLogFile
+	}
 }
 func InitTraceLog(filename string) {
 	if !TraceDebug {
 		return
 	}
 	TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	if ConsoleLogging {
+		traceLogWriter = io.MultiWriter(os.Stdout, TraceLogFile)
+	} else {
+		traceLogWriter = TraceLogFile
+	}
 }
 func SetLogsFolder(foldername string) {
 	currentday := GetDay()
@@ -100,7 +120,7 @@ func ErrorLog(message string) {
 	}
 
 	message = RetrieveLatestCaller(message)
-	PrintLogs(false, message, ErrorLogFile)
+	PrintLogs(message, 0)
 }
 func ChangeLog(message string, idnumber string) {
 	if ChangeLogFile == nil {
@@ -115,7 +135,7 @@ func ChangeLog(message string, idnumber string) {
 	if idnumber != "" {
 		message = message + " || " + idnumber
 	}
-	PrintLogs(false, message, ChangeLogFile)
+	PrintLogs(message, 1)
 }
 func TraceLog(message string) {
 	if !TraceDebug {
@@ -129,7 +149,7 @@ func TraceLog(message string) {
 		}
 	}
 	message = RetrieveLatestCaller(message)
-	PrintLogs(true, message, TraceLogFile)
+	PrintLogs(message, 2)
 }
 func RetrieveLatestCaller(message string) string {
 	pc, _, callerline, ok := runtime.Caller(1)
@@ -155,21 +175,14 @@ func RetrieveLatestCaller(message string) string {
 	return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", caller3[0], caller3[1], callerline3), message)
 }
 
-func PrintLogs(trace bool, message string, logfile *os.File) {
-	if !FileLogging {
-		fmt.Println(message)
-		return
-	}
-	if !FileLogging && ConsoleLogging {
-		fmt.Println(message)
-		return
-	} else if FileLogging && !ConsoleLogging {
-		PanicError(fmt.Fprintln(logfile, message))
-		return
-	} else {
-		multiWriter := io.MultiWriter(os.Stdout, logfile)
-		PanicError(fmt.Fprintln(multiWriter, message))
-		return
+func PrintLogs(message string, errorlevel int) {
+	switch errorlevel {
+	case 0:
+		PanicError(fmt.Fprintln(errorLogWriter, message))
+	case 1:
+		PanicError(fmt.Fprintln(changeLogWriter, message))
+	case 2:
+		PanicError(fmt.Fprintln(traceLogWriter, message))
 	}
 }
 func RotateLogs(logFolder string) {
