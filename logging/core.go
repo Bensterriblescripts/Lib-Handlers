@@ -26,7 +26,6 @@ func InitLogs() {
 	}()
 }
 func InitVars() {
-
 	ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
 	if runtime.GOOS == "windows" {
 		UserProfile = os.Getenv("USERPROFILE")
@@ -161,8 +160,17 @@ func PrintLogs(trace bool, message string, logfile *os.File) {
 		fmt.Println(message)
 		return
 	}
-	multiWriter := io.MultiWriter(os.Stdout, logfile)
-	PanicError(fmt.Fprintln(multiWriter, message))
+	if !FileLogging && ConsoleLogging {
+		fmt.Println(message)
+		return
+	} else if FileLogging && !ConsoleLogging {
+		PanicError(fmt.Fprintln(logfile, message))
+		return
+	} else {
+		multiWriter := io.MultiWriter(os.Stdout, logfile)
+		PanicError(fmt.Fprintln(multiWriter, message))
+		return
+	}
 }
 func RotateLogs(logFolder string) {
 	if TraceDebug {
