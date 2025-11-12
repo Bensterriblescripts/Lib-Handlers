@@ -18,7 +18,7 @@ func Run(command string) (string, bool) {
 
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // No powershell window
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	} else {
 		cmd = exec.Command("bash", "-c", command)
 	}
