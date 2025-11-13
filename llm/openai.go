@@ -191,6 +191,7 @@ func HandleFileUpload(path string) string {
 		return ""
 	}
 
+	TraceLog("Uploading file: " + path)
 	var req *http.Request
 	if req, err = ErrorExists(http.NewRequest("POST", "https://api.openai.com/v1/files", &buf)); err {
 		ErrorLog("Error creating request")
