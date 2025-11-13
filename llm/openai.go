@@ -128,7 +128,7 @@ func HandleNewFile(path string) []byte {
 		ErrorLog("Path is empty")
 		return nil
 	}
-	// fileid := UploadFile(path)
+	// fileid := HandleFileUpload(path)
 	// if fileid == "" {
 	// 	ErrorLog("Failed to upload file")
 	// 	return false
