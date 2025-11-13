@@ -62,7 +62,10 @@ func CreateInternalStream(w *http.ResponseWriter) (io.Writer, io.Writer) {
 	traceOut := io.MultiWriter(TraceLogFile, fw)
 	errorOut := io.MultiWriter(ErrorLogFile, fw)
 
-	fmt.Fprintln(*w, "Started...")
+	if _, failed := ErrorExists(fmt.Fprintln(*w, "Started...")); failed {
+		ErrorLog("Started fprintln failed... Writer may be misconfigured.")
+		return nil, nil
+	}
 	f.Flush()
 
 	return traceOut, errorOut
