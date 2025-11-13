@@ -115,6 +115,37 @@ type FileResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
+func HandleNewFile(path string) []byte {
+	if path == "" {
+		ErrorLog("Path is empty")
+		return nil
+	}
+	// fileid := UploadFile(path)
+	// if fileid == "" {
+	// 	ErrorLog("Failed to upload file")
+	// 	return false
+	// } else {
+	// 	TraceLog("Uploaded new file")
+	// }
+
+	response := GetContents("file-2fRFoyxgnASo4kHc9Zxb5d")
+	if response == nil {
+		ErrorLog("Failed to get contents")
+		return nil
+	} else {
+		TraceLog("Contents: " + string(response))
+	}
+
+	response = StructureContents(response)
+	if response == nil {
+		ErrorLog("Failed to structure contents")
+		return nil
+	} else {
+		TraceLog("Structured contents: " + string(response))
+	}
+
+	return response
+}
 func UploadFile(path string) string {
 	if strings.TrimSpace(path) == "" {
 		ErrorLog("Path is empty")
