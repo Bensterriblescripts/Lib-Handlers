@@ -197,7 +197,7 @@ func HandleFileUpload(path string) string {
 		ErrorLog("Error creating request")
 		return ""
 	}
-	req.Header.Set("Authorization", "Bearer "+OPENAIApiKey)
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("OPENAI_API_KEY"))
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	var client = &http.Client{Timeout: 60 * time.Second}
@@ -284,8 +284,8 @@ func StructureContents(contents []byte) []byte {
 }
 
 func SendRequest(textprompts []PromptMessage, model string) []byte {
-	if LLMKey == "" {
-		Panic("LLM API key has not been not set")
+	if OpenAIApiKey == "" {
+		Panic("OpenAI API key has not been set")
 		return nil
 	}
 	if len(textprompts) == 0 {
@@ -349,7 +349,7 @@ func SendRequest(textprompts []PromptMessage, model string) []byte {
 		return nil
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+LLMKey)
+	req.Header.Set("Authorization", "Bearer "+OpenAIApiKey)
 	var client = &http.Client{Timeout: 10 * time.Minute} // Yes, it does sometimes take that long
 
 	/* Send it */
@@ -362,7 +362,7 @@ func SendRequest(textprompts []PromptMessage, model string) []byte {
 		ErrorLog("No response from the server " + string(bodyBytes))
 		return nil
 	}
-	defer resp.Body.Close()
+	defer WrapErr(resp.Body.Close)
 
 	var respBytes []byte
 	if respBytes, err = ErrorExists(io.ReadAll(resp.Body)); err { // Read the response body
