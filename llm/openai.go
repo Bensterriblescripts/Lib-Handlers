@@ -27,6 +27,14 @@ type PromptMessage struct {
 type ChatRequest struct {
 	Model string          `json:"model"`
 	Input []PromptMessage `json:"input"`
+	Text  struct {
+		Format struct {
+			Type   string         `json:"type"`
+			Name   string         `json:"name"`
+			Schema map[string]any `json:"schema"`
+			Strict bool           `json:"strict"`
+		} `json:"format"`
+	} `json:"text"`
 }
 type ChatResponse struct {
 	Output []struct {
