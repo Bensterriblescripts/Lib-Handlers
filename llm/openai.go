@@ -183,3 +183,155 @@ func UploadFile(path string) string {
 		return response.ID
 	}
 }
+func GetContents(fileid string) []byte {
+	response := SendRequest([]PromptMessage{
+		{
+			Role: "user",
+			Content: []struct {
+				Type  string `json:"type"`
+				Text  string `json:"text,omitempty"`
+				Image string `json:"image_url,omitempty"`
+				File  string `json:"file_id,omitempty"`
+			}{
+				{
+					Type: "input_text",
+					Text: `From the document, create a table of contents in the format of Section, Subsection, Page Range. The page range is the start and end page of the section or subsection. Return the response as a JSON object.
+					Example:
+					{"toc":[{"section":"Purpose of this standard", range: "5-9", "subsections":[]},{"section":"Scope and application of this standard","subsections":[["Scope of this standard","5-6"],["Application of this standard","6-9"]]}]`,
+				},
+				{
+					Type: "input_file",
+					File: fileid,
+				},
+			},
+		},
+	}, "gpt-5-2025-08-07")
+	if response == nil {
+		ErrorLog("No response from the LLM")
+		return nil
+	}
+	return response
+}
+func StructureContents(contents []byte) []byte {
+	response := SendRequest([]PromptMessage{
+		{
+			Role: "user",
+			Content: []struct {
+				Type  string `json:"type"`
+				Text  string `json:"text,omitempty"`
+				Image string `json:"image_url,omitempty"`
+				File  string `json:"file_id,omitempty"`
+			}{
+				{
+					Type: "input_text",
+					Text: `Double check the json object doesn't contain obvious sequential duplicates, missing page ranges or the words "Section" or "Subsection" in the section or subsection name. There is allowed to be missing subsections. If there are any issues, remove the duplicate or add the missing page range. Return the corrected json object.
+					Format example:
+					{"toc":[{"section":"Purpose of this standard", range: "5-9", "subsections":[]},{"section":"Scope and application of this standard","subsections":[["Scope of this standard","5-6"],["Application of this standard","6-9"]]}]`,
+				},
+				{
+					Type: "input_text",
+					Text: string(contents),
+				},
+			},
+		},
+	}, "gpt-5-mini-2025-08-07")
+	if response == nil {
+		ErrorLog("No response from the LLM")
+		return nil
+	}
+	return response
+}
+
+func SendRequest(textprompts []PromptMessage, model string) []byte {
+	if LLMKey == "" {
+		Panic("LLM API key has not been not set")
+		return nil
+	}
+	if len(textprompts) == 0 {
+		ErrorLog("At least one text prompt is required")
+		return nil
+	}
+	var err bool
+
+	/* Create the request */
+	reqBody := ChatRequest{
+		Model: model,
+	}
+	if len(textprompts) > 0 {
+		for _, prompt := range textprompts { // Build the text prompts
+			reqBody.Input = append(reqBody.Input, prompt)
+		}
+	}
+	reqBody.Text.Format.Type = "json_schema"
+	reqBody.Text.Format.Name = "lvvta_document_extraction"
+	reqBody.Text.Format.Strict = true
+	reqBody.Text.Format.Schema = map[string]any{
+		"type":                 "object",
+		"additionalProperties": false,
+		"required":             []string{"toc"},
+		"properties": map[string]any{
+			"toc": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"section": map[string]any{
+							"type": "string",
+						},
+						"range": map[string]any{
+							"type": "string",
+						},
+						"subsections": map[string]any{
+							"type": "array",
+							"items": map[string]any{
+								"type":  "array",
+								"items": map[string]any{"type": "string"},
+							},
+						},
+					},
+					"required":             []string{"section", "range", "subsections"},
+					"additionalProperties": false,
+				},
+			},
+		},
+	}
+	var bodyBytes []byte // Serialise as json
+	if bodyBytes, err = ErrorExists(json.Marshal(reqBody)); err {
+		ErrorLog("Error marshalling request body" + string(bodyBytes))
+		return nil
+	}
+
+	/* Create the request */
+	var req *http.Request
+	if req, err = ErrorExists(http.NewRequest("POST", "https://api.openai.com/v1/responses", bytes.NewReader(bodyBytes))); err {
+		ErrorLog("Error creating request" + string(bodyBytes))
+		return nil
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+LLMKey)
+	var client = &http.Client{Timeout: 10 * time.Minute} // Yes, it does sometimes take that long
+
+	/* Send it */
+	TraceLog("Sending request: " + string(bodyBytes))
+	var resp *http.Response
+	if resp, err = ErrorExists(client.Do(req)); err {
+		ErrorLog("Error executing request " + string(bodyBytes))
+		return nil
+	} else if resp == nil {
+		ErrorLog("No response from the server " + string(bodyBytes))
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var respBytes []byte
+	if respBytes, err = ErrorExists(io.ReadAll(resp.Body)); err { // Read the response body
+		ErrorLog("Error reading response body" + string(respBytes))
+		return nil
+	} else if resp.StatusCode != http.StatusOK {
+		ErrorLog("Error response status code: " + strconv.Itoa(resp.StatusCode) + " " + string(respBytes))
+		return nil
+	}
+
+	TraceLog("Response: " + string(respBytes))
+	return respBytes
+}
