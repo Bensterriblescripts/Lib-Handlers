@@ -65,7 +65,7 @@ func UploadFile(path string) []byte {
 		TraceLog("Uploaded new file")
 	}
 
-	response := GetContents("file-2fRFoyxgnASo4kHc9Zxb5d")
+	response := GetContents(fileid)
 	if response == nil {
 		ErrorLog("Failed to get contents")
 		return nil
