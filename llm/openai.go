@@ -57,13 +57,13 @@ func UploadFile(path string) []byte {
 		ErrorLog("Path is empty")
 		return nil
 	}
-	// fileid := HandleFileUpload(path)
-	// if fileid == "" {
-	// 	ErrorLog("Failed to upload file")
-	// 	return false
-	// } else {
-	// 	TraceLog("Uploaded new file")
-	// }
+	fileid := HandleFileUpload(path)
+	if fileid == "" {
+		ErrorLog("Failed to upload file")
+		return nil
+	} else {
+		TraceLog("Uploaded new file")
+	}
 
 	response := GetContents("file-2fRFoyxgnASo4kHc9Zxb5d")
 	if response == nil {
