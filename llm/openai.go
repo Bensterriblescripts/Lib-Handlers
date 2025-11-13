@@ -83,6 +83,25 @@ func UploadFile(path string) []byte {
 
 	return response
 }
+func UseUploadedFile(fileid string) []byte {
+	response := GetContents(fileid)
+	if response == nil {
+		ErrorLog("Failed to get contents")
+		return nil
+	} else {
+		TraceLog("Contents: " + string(response))
+	}
+
+	response = StructureContents(response)
+	if response == nil {
+		ErrorLog("Failed to structure contents")
+		return nil
+	} else {
+		TraceLog("Structured contents: " + string(response))
+	}
+
+	return response
+}
 
 func HandleFileUpload(path string) string {
 	if strings.TrimSpace(path) == "" {
