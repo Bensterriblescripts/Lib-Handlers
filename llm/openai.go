@@ -123,7 +123,7 @@ type FileResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func HandleNewFile(path string) []byte {
+func UploadFile(path string) []byte {
 	if path == "" {
 		ErrorLog("Path is empty")
 		return nil
