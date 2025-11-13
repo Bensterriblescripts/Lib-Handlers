@@ -57,15 +57,34 @@ func UploadFile(path string) []byte {
 		ErrorLog("Path is empty")
 		return nil
 	}
-	// fileid := HandleFileUpload(path)
-	// if fileid == "" {
-	// 	ErrorLog("Failed to upload file")
-	// 	return false
-	// } else {
-	// 	TraceLog("Uploaded new file")
-	// }
+	fileid := HandleFileUpload(path)
+	if fileid == "" {
+		ErrorLog("Failed to upload file")
+		return nil
+	} else {
+		TraceLog("Uploaded new file")
+	}
 
-	response := GetContents("file-2fRFoyxgnASo4kHc9Zxb5d")
+	response := GetContents(fileid)
+	if response == nil {
+		ErrorLog("Failed to get contents")
+		return nil
+	} else {
+		TraceLog("Contents: " + string(response))
+	}
+
+	response = StructureContents(response)
+	if response == nil {
+		ErrorLog("Failed to structure contents")
+		return nil
+	} else {
+		TraceLog("Structured contents: " + string(response))
+	}
+
+	return response
+}
+func UseUploadedFile(fileid string) []byte {
+	response := GetContents(fileid)
 	if response == nil {
 		ErrorLog("Failed to get contents")
 		return nil
