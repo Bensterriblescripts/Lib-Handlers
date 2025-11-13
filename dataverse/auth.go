@@ -64,7 +64,7 @@ func GetAccessToken() Token {
 		}
 	}
 
-	defer resp.Body.Close()
+	defer WrapErr(resp.Body.Close)
 	body := PanicError(io.ReadAll(resp.Body))
 	if ErrExists(json.Unmarshal(body, &token)) {
 		ErrorLog("Failed to deserialize response " + string(body))
