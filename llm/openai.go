@@ -127,7 +127,7 @@ func UploadFile(path string) string {
 		ErrorLog("Error opening file: " + path)
 		return ""
 	} else {
-		defer file.Close()
+		defer WrapErr(file.Close)
 	}
 
 	var buf bytes.Buffer
@@ -168,7 +168,7 @@ func UploadFile(path string) string {
 		ErrorLog("No response from the server")
 		return ""
 	}
-	defer resp.Body.Close()
+	defer WrapErr(resp.Body.Close)
 
 	var response FileResponse
 	if ErrExists(json.NewDecoder(resp.Body).Decode(&response)) {

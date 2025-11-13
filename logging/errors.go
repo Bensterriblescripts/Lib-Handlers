@@ -69,6 +69,18 @@ func RetrieveError[T any](_ T, err error) error {
 	return nil
 }
 
+/* Defer */
+func WrapErr(fn func() error) {
+	if ErrExists(fn()) {
+		ErrorLog("Error During Defer, Continuing...")
+	}
+}
+func WrapPanic(fn func() error) {
+	if ErrExists(fn()) {
+		Panic("Error During Defer, Exiting...")
+	}
+}
+
 /* Log then Panic */
 func Panic(message string) {
 	message = RetrieveLatestCaller(message)
