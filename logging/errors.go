@@ -107,3 +107,13 @@ func Assert(value1 any, value2 any) {
 		Panic("Assertion Failed - Values Mismatch `" + fmt.Sprintf("%v", value1) + "` `" + fmt.Sprintf("%v", value2) + "`")
 	}
 }
+func WrapErr(fn func() error) {
+	if ErrExists(fn()) {
+		ErrorLog("Error During Defer, Continuing...")
+	}
+}
+func WrapPanic(fn func() error) {
+	if ErrExists(fn()) {
+		Panic("Error During Defer, Exiting...")
+	}
+}
