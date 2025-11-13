@@ -83,7 +83,7 @@ func SendRequest(textprompts []PromptMessage) string {
 		ErrorLog("No response from the server " + string(bodyBytes))
 		return ""
 	}
-	defer resp.Body.Close()
+	defer WrapErr(resp.Body.Close)
 
 	var respBytes []byte
 	if respBytes, err = ErrorExists(io.ReadAll(resp.Body)); err { // Read the response body
@@ -127,7 +127,7 @@ func UploadFile(path string) string {
 		ErrorLog("Error opening file: " + path)
 		return ""
 	} else {
-		defer file.Close()
+		defer WrapErr(file.Close)
 	}
 
 	var buf bytes.Buffer
@@ -168,7 +168,7 @@ func UploadFile(path string) string {
 		ErrorLog("No response from the server")
 		return ""
 	}
-	defer resp.Body.Close()
+	defer WrapErr(resp.Body.Close)
 
 	var response FileResponse
 	if ErrExists(json.NewDecoder(resp.Body).Decode(&response)) {

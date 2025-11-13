@@ -69,6 +69,18 @@ func RetrieveError[T any](_ T, err error) error {
 	return nil
 }
 
+/* Defer */
+func WrapErr(fn func() error) {
+	if ErrExists(fn()) {
+		ErrorLog("Error During Defer, Continuing...")
+	}
+}
+func WrapPanic(fn func() error) {
+	if ErrExists(fn()) {
+		Panic("Error During Defer, Exiting...")
+	}
+}
+
 /* Log then Panic */
 func Panic(message string) {
 	message = RetrieveLatestCaller(message)
@@ -85,7 +97,10 @@ func Panic(message string) {
 	if len(fileWriters) > 0 {
 		stackTrace := string(debug.Stack())
 		message = stackTrace + "\n" + message
-		fmt.Fprintln(multiWriter, message)
+		if _, failed := ErrorExists(fmt.Fprintln(multiWriter, message)); failed {
+			fmt.Println("Error writing to the error log during panic, despite the a multiwriter being available")
+			return
+		}
 	} else {
 		fmt.Println(message)
 	}
