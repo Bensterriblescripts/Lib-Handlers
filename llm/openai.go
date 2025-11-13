@@ -154,7 +154,8 @@ func HandleNewFile(path string) []byte {
 
 	return response
 }
-func UploadFile(path string) string {
+
+func HandleFileUpload(path string) string {
 	if strings.TrimSpace(path) == "" {
 		ErrorLog("Path is empty")
 		return ""
