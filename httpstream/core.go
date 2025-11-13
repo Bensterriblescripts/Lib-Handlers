@@ -38,7 +38,10 @@ func CreateShellStream(w *http.ResponseWriter, command string, arg string) strin
 		return "Command start failed: " + err.Error()
 	}
 
-	fmt.Fprintln(*w, "Started...")
+	if _, failed := ErrorExists(fmt.Fprintln(*w, "Started...")); failed {
+		ErrorLog("Started print failed... Writer may be misconfigured.")
+		return ""
+	}
 	f.Flush()
 
 	if err := cmd.Wait(); err != nil {
