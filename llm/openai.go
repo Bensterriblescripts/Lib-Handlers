@@ -15,6 +15,8 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
+var OpenAIApiKey string
+
 type PromptMessage struct {
 	Role    string `json:"role"`
 	Content []struct {
