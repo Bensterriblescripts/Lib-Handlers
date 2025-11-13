@@ -85,7 +85,10 @@ func Panic(message string) {
 	if len(fileWriters) > 0 {
 		stackTrace := string(debug.Stack())
 		message = stackTrace + "\n" + message
-		fmt.Fprintln(multiWriter, message)
+		if _, failed := ErrorExists(fmt.Fprintln(multiWriter, message)); failed {
+			fmt.Println("Error writing to the error log during panic, despite the a multiwriter being available")
+			return
+		}
 	} else {
 		fmt.Println(message)
 	}
