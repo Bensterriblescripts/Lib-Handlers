@@ -108,7 +108,7 @@ func UseUploadedFile(fileid string) []byte {
 	return response
 }
 
-func HandleFileUpload(path string) string {
+func handleFileUpload(path string) string {
 	if strings.TrimSpace(path) == "" {
 		ErrorLog("Path is empty")
 		return ""
