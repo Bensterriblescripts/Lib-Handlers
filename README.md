@@ -21,7 +21,9 @@ Such as:
 ---
 
 run `go get github.com/Bensterriblescripts/Lib-Handlers@latest`
+
 or
+
 run `go get github.com/Bensterriblescripts/Lib-Handlers@linux`
 
 ---
