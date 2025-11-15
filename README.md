@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 [![Status](https://img.shields.io/badge/Status-Experimental-orange)]()
 
-> This library is **Windows-only** and heavily tailored to my personal needs.  I've detailed the main uses and initial setup below just in case.
+> This library is **Windows-only** and heavily tailored to my personal needs.  I've detailed the main uses and initial setup below just in case this is in use elsewhere.
 
 ---
 
