@@ -86,6 +86,7 @@ Functions with Error expects a return of (T, error) and Err only expects only (e
  - `PanicError(functionMustSucceed);`
  - `ErrorExists(functionShouldBeCheckedForFailing);`
  - `PrintError(justLogTheErrorWeDontCare);`
+ - `defer WrapErr(thingWeWantToDefer)`
 
 ---
 
