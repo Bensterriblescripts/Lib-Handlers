@@ -57,7 +57,12 @@ func UploadFile(path string) []byte {
 		ErrorLog("Path is empty")
 		return nil
 	}
-	fileid := HandleFileUpload(path)
+	if strings.HasSuffix(path, "..docx") {
+		ErrorLog("DOCX files are not supported by openai")
+		return nil
+	}
+
+	fileid := handleFileUpload(path)
 	if fileid == "" {
 		ErrorLog("Failed to upload file")
 		return nil
