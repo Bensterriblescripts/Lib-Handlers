@@ -52,17 +52,21 @@ type FileResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func UploadFile(path string) []byte {
+func UploadFile(path string, purpose string) []byte {
 	if path == "" {
 		ErrorLog("Path is empty")
 		return nil
 	}
-	if strings.HasSuffix(path, "..docx") {
+	if strings.HasSuffix(path, ".docx") {
 		ErrorLog("DOCX files are not supported by openai")
 		return nil
 	}
 
-	fileid := handleFileUpload(path)
+	if purpose == "" {
+		purpose = "user_data"
+	}
+
+	fileid := handleFileUpload(path, purpose)
 	if fileid == "" {
 		ErrorLog("Failed to upload file")
 		return nil
@@ -108,7 +112,7 @@ func UseUploadedFile(fileid string) []byte {
 	return response
 }
 
-func handleFileUpload(path string) string {
+func handleFileUpload(path string, purpose string) string {
 	if strings.TrimSpace(path) == "" {
 		ErrorLog("Path is empty")
 		return ""
@@ -126,8 +130,8 @@ func handleFileUpload(path string) string {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
-	if ErrExists(writer.WriteField("purpose", "user_data")) {
-		ErrorLog("Error writing user_data purpose field")
+	if ErrExists(writer.WriteField("purpose", purpose)) {
+		ErrorLog("Error writing purpose field")
 		return ""
 	}
 	var part io.Writer
