@@ -3,6 +3,7 @@ package llm
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -170,7 +171,7 @@ func handleFileUpload(path string, purpose string) string {
 
 	var response FileResponse
 	if ErrExists(json.NewDecoder(resp.Body).Decode(&response)) {
-		ErrorLog("Error decoding response body")
+		ErrorLog(fmt.Sprintf("Error decoding response body %v", response))
 		return ""
 	} else {
 		if response.Error != "" {
