@@ -91,4 +91,4 @@ Functions with Error expects a return of (T, error) and Err only expects only (e
 ---
 
 All of these functions write to the error log and stdout, `Panic()` can be called directly to write to an errorlog and exit the program.
-YOU MUST HANDLE YOUR DEFERS before using this function.
+You must add a defer to close the files and any ssh handlers before the program closes. I am too stupid/lazy to figure out how to do this outside of the main function at this moment.
