@@ -21,6 +21,8 @@ Such as:
 ---
 
 run `go get github.com/Bensterriblescripts/Lib-Handlers@latest`
+or
+run `go get github.com/Bensterriblescripts/Lib-Handlers@linux`
 
 ---
 
@@ -53,8 +55,7 @@ keyvaluepair := ReadConfig()
 
 This here is main purpose of the library.
 Golangs error handling sucks, you cannot tell me otherwise. 
-
-See logging/errors.go for the functions.
+All calls to these functions writes into C:\Local\Logs\*Appname*\ as well as stdout.
 *Functions with Err expect only (error), functions with Error expect (T, error)*
 ```go
 if ErrExists(thisFunction) {
