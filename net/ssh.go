@@ -1,72 +1,56 @@
 package network
 
 import (
-	"fmt"
 	"io"
-	"net/http"
+	"net"
 	"os"
-	"os/exec"
+	"path/filepath"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
+
+	"golang.org/x/crypto/ssh"
 )
 
-type FlushWriter struct {
-	W io.Writer
-	F http.Flusher
+func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
+	TraceLog("Starting SSH tunnel " + localAddr + " -> " + remoteAddr)
+	ln := PanicError(net.Listen("tcp", localAddr))
+	go func() {
+		for {
+			lc, err := ln.Accept()
+			if err != nil {
+				if ne, ok := err.(net.Error); ok && ne == nil {
+					continue
+				}
+				return // listener closed
+			}
+			go func() {
+				rc := PanicError(client.Dial("tcp", remoteAddr))
+				go func() { _, _ = io.Copy(rc, lc) }()
+				_, _ = io.Copy(lc, rc)
+				PrintErr(lc.Close())
+				PrintErr(rc.Close())
+			}()
+		}
+	}()
+	return ln
 }
-
-func (fw FlushWriter) Write(p []byte) (int, error) {
-	n, err := fw.W.Write(p)
-	fw.F.Flush()
-	return n, err
-}
-
-func CreateShellStream(w *http.ResponseWriter, command string, arg string) string {
-	f, ok := (*w).(http.Flusher)
-	if !ok {
-		return "Streaming not supported"
+func LoadDefaultPrivateKeys() ssh.Signer {
+	var path string
+	home := PanicError(os.UserHomeDir())
+	candidates := []string{
+		filepath.Join(home, ".ssh", "id_ed25519"),
+		filepath.Join(home, ".ssh", "id_rsa"),
+	}
+	for _, p := range candidates {
+		if _, err := os.Stat(p); err == nil {
+			path = p
+			break
+		}
+	}
+	if path == "" {
+		Panic("No SSH private key found.")
 	}
 
-	fw := FlushWriter{W: *w, F: f}
-	cmd := exec.Command(command, arg)
-	stdTraceOut := io.MultiWriter(os.Stdout, TraceLogFile)
-	stdErrorOut := io.MultiWriter(os.Stderr, ErrorLogFile)
-	cmd.Stdout = io.MultiWriter(stdTraceOut, fw)
-	cmd.Stderr = io.MultiWriter(stdErrorOut, fw)
-
-	if err := cmd.Start(); err != nil {
-		return "Command start failed: " + err.Error()
-	}
-
-	if _, failed := ErrorExists(fmt.Fprintln(*w, "Started...")); failed {
-		ErrorLog("Started print failed... Writer may be misconfigured.")
-		return ""
-	}
-	f.Flush()
-
-	if err := cmd.Wait(); err != nil {
-		f.Flush()
-	}
-
-	f.Flush()
-
-	return "Finished"
-}
-func CreateInternalStream(w *http.ResponseWriter) (io.Writer, io.Writer) {
-	f, ok := (*w).(http.Flusher)
-	if !ok {
-		return nil, nil
-	}
-
-	fw := FlushWriter{W: *w, F: f}
-	traceOut := io.MultiWriter(TraceLogFile, fw)
-	errorOut := io.MultiWriter(ErrorLogFile, fw)
-
-	if _, failed := ErrorExists(fmt.Fprintln(*w, "Started...")); failed {
-		ErrorLog("Started fprintln failed... Writer may be misconfigured.")
-		return nil, nil
-	}
-	f.Flush()
-
-	return traceOut, errorOut
+	key := PanicError(os.ReadFile(path))
+	return PanicError(ssh.ParsePrivateKey(key))
 }
