@@ -98,86 +98,86 @@ You must add a defer to close the files and any ssh handlers before the program 
 ## Function Quick List
 
 ### change
-- `change.ISliceToString([]int64{1, 2, 3}) // -> []string{"1","2","3"}`
-- `change.SSlicetoISlice([]string{"1","2","3"}) // -> []int64{1,2,3}`
+- `ISliceToString([]int64{1, 2, 3}) // -> []string{"1","2","3"}`
+- `SSlicetoISlice([]string{"1","2","3"}) // -> []int64{1,2,3}`
 
 ### config
-- `config.ReadConfig() // map[string]string of key=value pairs from the config file`
-- `config.GetConfig() // []byte of raw config file contents`
-- `config.OverwriteConfig(map[string]string{"KEY":"VALUE"}) // merges into existing and writes`
-- `config.WriteConfig(map[string]string{"KEY":"VALUE"}) // true on success`
+- `ReadConfig() // -> map[string]string of key=value pairs from the config file`
+- `GetConfig() // -> []byte of raw config file contents`
+- `OverwriteConfig(map[string]string{"KEY":"VALUE"}) // merges into existing config and writes`
+- `WriteConfig(map[string]string{"KEY":"VALUE"}) // -> true on success`
 
 ### dataverse
-- `dataverse.Authenticate() // retrieves and caches a new access token`
-- `dataverse.GetAccessToken() // requests a token using ClientID, ClientSecret, TenantID, Endpoint`
-- `dataverse.Request("accounts", "$select=name&$top=10") // GET request, returns []byte body`
-- `dataverse.Create("accounts", []byte(`{"name":"Acme"}`)) // POST request, returns []byte body`
+- `Authenticate() // retrieves and caches a new access token`
+- `GetAccessToken() // requests a token using ClientID, ClientSecret, TenantID, Endpoint`
+- `Request("accounts", "$select=name&$top=10") // GET request, returns []byte body`
+- `Create("accounts", []byte(`{"name":"Acme"}`)) // POST request, returns []byte body`
 
 ### guid
-- `guid.New("00000000-0000-0000-0000-000000000000") // -> Guid{String:..., Valid:true}`
-- `guid.Empty() // -> Guid{String:"", Valid:false}`
-- `guid.Matches(guid.New("..."), guid.New("...")) // true if equal (case-insensitive)`
-- `guid.MatchesString(guid.New("..."), "...") // true if equal (case-insensitive)`
+- `New("00000000-0000-0000-0000-000000000000") // -> Guid{String:..., Valid:true}`
+- `Empty() // -> Guid{String:"", Valid:false}`
+- `Matches(guid.New("..."), guid.New("...")) // -> true if equal (case-insensitive)`
+- `MatchesString(guid.New("..."), "...") // -> true if equal (case-insensitive)`
 
 ### llm
-- `llm.UploadFile("/path/to/file.pdf", "user_data") // uploads, extracts, structures -> []byte JSON`
-- `llm.UseUploadedFile("file_abc123") // fetches and structures contents for an existing file id`
-- `llm.GetContents("file_abc123") // extracts a TOC from the uploaded file -> []byte JSON`
-- `llm.StructureContents(rawJSON) // cleans/validates the TOC JSON -> []byte JSON`
-- `llm.SendRequest([]llm.PromptMessage{{Role:"user", Content: []struct{Type, Text, Image, File string}{{Type:"input_text", Text:"Hello"}}}}, "gpt-5-2025-08-07") // low-level call to responses API`
+- `UploadFile("/path/to/file.pdf", "user_data") // uploads, extracts, structures -> []byte JSON`
+- `UseUploadedFile("file_abc123") // fetches and structures contents for an existing file ID`
+- `GetContents("file_abc123") // extracts a TOC from the uploaded file -> []byte JSON`
+- `StructureContents(rawJSON) // cleans/validates TOC JSON -> []byte JSON`
+- `SendRequest([]PromptMessage{{Role:"user", Content: []struct{Type, Text, Image, File string}{{Type:"input_text", Text:"Hello"}}}}, "gpt-5-2025-08-07") // low-level call to responses API`
 
 ### logging
-- `logging.InitLogs() // initialize log files and rotation (set AppName/ExecutableName first)`
-- `logging.InitVars() // sets ConfigPath/BaseLogsFolder (usually called by InitLogs)`
-- `logging.InitErrorLog("/tmp/errors-2025-01-01.log") // open error log file`
-- `logging.InitChangeLog("/tmp/changes-2025-01-01.log") // open change log file`
-- `logging.InitTraceLog("/tmp/trace-2025-01-01.log") // open trace log file (no-op if !TraceDebug)`
-- `logging.SetLogsFolder("session-123") // switch logs to subfolder session-123/`
-- `logging.ErrorLog("something failed") // write to error log`
-- `logging.ChangeLog("updated record", "ID-42") // write to change log with ID`
-- `logging.TraceLog("debug details") // write to trace log (only if TraceDebug)`
-- `logging.RetrieveLatestCaller("msg") // -> "time || (pkg) Func:Line || msg"`
-- `logging.PrintLogs("msg", 0) // print as error (0=error,1=change,2=trace)`
-- `logging.RotateLogs(logging.BaseLogsFolder) // remove logs older than retention`
-- `logging.LogOutdated("2025-1-02", 7) // -> true if older than 7 days`
-- `logging.ClearOutdatedLogs("/tmp/trace-2024-12-01.log") // delete old log`
-- `logging.PanicErr(err) // panic if err != nil`
-- `logging.PrintErr(err) // log error, continue`
-- `logging.ErrExists(err) // -> true if err != nil`
-- `logging.RetrieveErr(err) // -> err (and logs if not nil)`
-- `defer logging.WrapErr(file.Close) // log error from defer and continue`
-- `defer logging.WrapPanic(file.Close) // log error from defer and exit`
-- `logging.Panic("critical failure") // log with stack and exit`
-- `logging.Assert(10, 10) // panic if types/values mismatch`
+- `InitLogs() // initializes log files and rotation (set AppName/ExecutableName first)`
+- `InitVars() // sets ConfigPath/BaseLogsFolder (usually called by InitLogs)`
+- `InitErrorLog("/tmp/errors-2025-01-01.log") // opens error log file`
+- `InitChangeLog("/tmp/changes-2025-01-01.log") // opens change log file`
+- `InitTraceLog("/tmp/trace-2025-01-01.log") // opens trace log file (no-op if !TraceDebug)`
+- `SetLogsFolder("session-123") // switches logs to subfolder session-123/`
+- `ErrorLog("something failed") // writes to error log`
+- `ChangeLog("updated record", "ID-42") // writes to change log with ID`
+- `TraceLog("debug details") // writes to trace log (only if TraceDebug)`
+- `RetrieveLatestCaller("msg") // -> "time || (pkg) Func:Line || msg"`
+- `PrintLogs("msg", 0) // prints as error (0=error,1=change,2=trace)`
+- `RotateLogs(BaseLogsFolder) // removes logs older than retention`
+- `LogOutdated("2025-1-02", 7) // -> true if older than 7 days`
+- `ClearOutdatedLogs("/tmp/trace-2024-12-01.log") // deletes old log`
+- `PanicErr(err) // panics if err != nil`
+- `PrintErr(err) // logs error and continues`
+- `ErrExists(err) // -> true if err != nil`
+- `RetrieveErr(err) // -> err (and logs if not nil)`
+- `defer WrapErr(file.Close) // logs error from defer and continues`
+- `defer WrapPanic(file.Close) // logs error from defer and exits`
+- `Panic("critical failure") // logs with stack and exits`
+- `Assert(10, 10) // panics if types/values mismatch`
 
 ### net (package network)
-- `ln := network.SSHTunnel(client, "127.0.0.1:8080", "remote.host:80"); defer ln.Close() // TCP tunnel via SSH`
-- `signer := network.LoadDefaultPrivateKeys() // read ~/.ssh/id_ed25519 or id_rsa`
-- `network.CreateShellStream(&w, "ls", "-la") // stream shell output to HTTP client`
-- `traceOut, errorOut := network.CreateInternalStream(&w) // get writers streaming to client`
+- `SSHTunnel(client, "127.0.0.1:8080", "remote.host:80"); defer ln.Close() // creates TCP tunnel via SSH`
+- `LoadDefaultPrivateKeys() // reads ~/.ssh/id_ed25519 or id_rsa`
+- `CreateShellStream(&w, "ls", "-la") // streams shell output to HTTP client`
+- `CreateInternalStream(&w) // returns writers streaming to client`
 
 ### os (package osapi)
-- `osapi.HideConsole(cmd) // Windows-only: hide window for process`
-- `out, ok := osapi.Run("echo hello") // run shell command, get combined output`
-- `ok := osapi.EnsurePath("/tmp/app/config.ini") // create parent dirs if needed`
+- `HideConsole(cmd) // Windows-only: hides window for process`
+- `Run("echo hello") // runs shell command, returns combined output`
+- `EnsurePath("/tmp/app/config.ini") // creates parent dirs if needed`
 
 ### os (Windows HWND helpers; package osapi)
-- `osapi.SetWindowFullscreen("Untitled - Notepad") // Windows-only: make window fullscreen`
-- `w, h := osapi.GetScreenSize() // -> screen width/height`
-- `osapi.GetSystemMetrics(osapi.SM_CXSCREEN) // -> metric value`
-- `hwnd := osapi.FindWindowByTitle("Untitled - Notepad") // -> window handle`
-- `ok := osapi.SetWindowPos(hwnd, 0, 0, 0, w, h, osapi.SWP_SHOWWINDOW|osapi.SWP_FRAMECHANGED) // move/resize`
+- `SetWindowFullscreen("Untitled - Notepad") // Windows-only: makes window fullscreen`
+- `GetScreenSize() // -> screen width/height`
+- `GetSystemMetrics(SM_CXSCREEN) // -> metric value`
+- `FindWindowByTitle("Untitled - Notepad") // -> window handle`
+- `SetWindowPos(hwnd, 0, 0, 0, w, h, SWP_SHOWWINDOW|SWP_FRAMECHANGED) // moves/resizes window`
 
 ### test
-- `test.BenchmarkFunctions(fn1, fn2, 1000) // log total and per-call ms for two funcs`
+- `BenchmarkFunctions(fn1, fn2, 1000) // logs total and per-call ms for two funcs`
 
 ### time
-- `time.UnixSince(ts, 60) // -> true if now - ts > 60 seconds`
-- `time.UnixUntil(ts, 60) // -> true if now - ts < 60 seconds`
-- `time.ConvertUnixToTimestamp(1710000000) // -> "YYYY-MM-DD HH:MM:SS.mmm"`
-- `time.GetTime() // -> "3:04PM" (local)`
-- `time.GetUnixTime() // -> int64 seconds UTC`
-- `time.GetTimestamp() // -> "YYYY-MM-DD HH:MM:SS.mmm" (UTC)`
-- `time.GetFullDateTime() // -> "D/M/YY h:mmam/pm" (local)`
-- `time.GetDay() // -> "YYYY-M-D" (UTC)`
-- `time.GetDateArray() // -> []int{day, month, year} (local)`
+- `UnixSince(ts, 60) // -> true if now - ts > 60 seconds`
+- `UnixUntil(ts, 60) // -> true if now - ts < 60 seconds`
+- `ConvertUnixToTimestamp(1710000000) // -> "YYYY-MM-DD HH:MM:SS.mmm"`
+- `GetTime() // -> "3:04PM" (local)`
+- `GetUnixTime() // -> int64 seconds UTC`
+- `GetTimestamp() // -> "YYYY-MM-DD HH:MM:SS.mmm" (UTC)`
+- `GetFullDateTime() // -> "D/M/YY h:mmam/pm" (local)`
+- `GetDay() // -> "YYYY-M-D" (UTC)`
+- `GetDateArray() // -> []int{day, month, year} (local)`
