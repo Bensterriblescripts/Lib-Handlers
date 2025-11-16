@@ -22,6 +22,10 @@ Such as:
 
 run `go get github.com/Bensterriblescripts/Lib-Handlers@latest`
 
+or
+
+run `go get github.com/Bensterriblescripts/Lib-Handlers@linux`
+
 ---
 
 Right after entering `main()`, you need to declare some mandatory variables as well as `InitLogs()`:
@@ -54,7 +58,7 @@ keyvaluepair := ReadConfig()
 This here is main purpose of the library.
 Golangs error handling sucks, you cannot tell me otherwise. 
 
-See logging/errors.go for the functions.
+All calls to these functions writes into C:\Local\Logs\*Appname*\ as well as stdout.
 *Functions with Err expect only (error), functions with Error expect (T, error)*
 ```go
 if ErrExists(thisFunction) {
@@ -82,8 +86,9 @@ Functions with Error expects a return of (T, error) and Err only expects only (e
  - `PanicError(functionMustSucceed);`
  - `ErrorExists(functionShouldBeCheckedForFailing);`
  - `PrintError(justLogTheErrorWeDontCare);`
+ - `defer WrapErr(thingWeWantToDefer)`
 
 ---
 
 All of these functions write to the error log and stdout, `Panic()` can be called directly to write to an errorlog and exit the program.
-YOU MUST HANDLE YOUR DEFERS before using this function.
+You must add a defer to close the files and any ssh handlers before the program closes. I am too stupid/lazy to figure out how to do this outside of the main function at this moment.
