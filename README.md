@@ -6,7 +6,7 @@
 [![Status](https://img.shields.io/badge/Status-Experimental-orange)]()
 
 > This library is **Windows-only** and heavily tailored to my personal needs.  I've detailed the main uses and initial setup below just in case this is in use elsewhere.
-> There is a Linux branch which trims out function which use Windows DLLs and API calls.
+> There is a Linux branch which trims out functions which use Windows DLLs and API calls.
 ---
 
 This library is focused is on error handling with logs, but also has functions I use regularly.
