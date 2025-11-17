@@ -4,14 +4,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
-func HideConsole(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-}
 func Run(command string) (string, bool) {
 	cmd := exec.Command("bash", "-c", command)
 
