@@ -100,7 +100,7 @@ func Create(table string, data []byte) []byte {
 					TraceLog(string(body))
 					TraceLog("----------")
 				}
-				if resp.StatusCode != 200 {
+				if (resp.StatusCode-200) > 99 && (resp.StatusCode-200) < 0 { // Dataverse sends back different 200 status codes for some unholy reason
 					ErrorLog(fmt.Sprintf("HTTP Error %d: %s", resp.StatusCode, string(body)))
 					return nil
 				}
