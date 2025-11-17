@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"syscall"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -14,14 +13,7 @@ func HideConsole(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 }
 func Run(command string) (string, bool) {
-	var cmd *exec.Cmd
-
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	} else {
-		cmd = exec.Command("bash", "-c", command)
-	}
+	cmd := exec.Command("bash", "-c", command)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
