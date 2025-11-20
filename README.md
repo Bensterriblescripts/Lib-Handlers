@@ -158,13 +158,16 @@ You must add a defer to close the files and any ssh handlers before the program 
 
 ### os
 - `HideConsole(cmd) // Windows-only: hides window for process`
-- `Run("echo hello") // runs shell command, returns combined output`
+- `Run("echo hello") // runs shell command, returns combined output and ok`
 - `EnsurePath("/tmp/app/config.ini") // creates parent dirs if needed`
 - `SetWindowFullscreen("Untitled - Notepad") // Windows-only: makes window fullscreen`
-- `GetScreenSize() // -> screen width/height`
-- `GetSystemMetrics(SM_CXSCREEN) // -> metric value`
-- `FindWindowByTitle("Untitled - Notepad") // -> window handle`
-- `SetWindowPos(hwnd, 0, 0, 0, w, h, SWP_SHOWWINDOW|SWP_FRAMECHANGED) // moves/resizes window`
+- `GetScreenSize() // Windows-only: screen width/height`
+- `GetSystemMetrics(SM_CXSCREEN) // Windows-only: metric value`
+- `FindWindowByTitle("Untitled - Notepad") // Windows-only: window handle`
+- `SetWindowPos(hwnd, 0, 0, 0, w, h, SWP_SHOWWINDOW|SWP_FRAMECHANGED) // Windows-only: moves/resizes window`
+- `GetAllActiveWindows() // Windows-only: []Window of visible top-level windows`
+- `type Window struct { Title, FullTitle string; Handle uintptr; Process uint32; Executable string }` // Windows-only: Window information struct
+- `const SM_CXSCREEN, SM_CYSCREEN, SWP_SHOWWINDOW, SWP_FRAMECHANGED` // Windows-only
 
 ### test
 - `BenchmarkFunctions(fn1, fn2, 1000) // logs total and per-call ms for two funcs`
