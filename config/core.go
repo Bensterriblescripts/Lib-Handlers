@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
-	osapi "github.com/Bensterriblescripts/Lib-Handlers/os"
+	osapi "github.com/Bensterriblescripts/Lib-Handlers/osapi"
 )
 
 var CurrentConfiguration map[string]string
