@@ -56,8 +56,8 @@ func SetWindowFullscreen(windowname string) {
 }
 func SetWindowPos(hwnd uintptr, hwndInsertAfter uintptr, x, y, cx, cy int32, flags uint32) bool {
 	r, _, _ := procSetWindowPos.Call(
-		uintptr(hwnd),
-		uintptr(hwndInsertAfter),
+		hwnd,
+		hwndInsertAfter,
 		uintptr(x),
 		uintptr(y),
 		uintptr(cx),
@@ -101,7 +101,6 @@ type Window struct {
 var activeWindows []Window
 
 func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
-	// Visible windows only
 	if visible, _, _ := procIsWindowVisible.Call(hwnd); visible == 0 {
 		return 1
 	}
@@ -114,7 +113,7 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 		hwnd,
 		uintptr(unsafe.Pointer(&window.Process)),
 	); window.Process == 0 {
-		if e != nil && e != syscall.Errno(0) {
+		if e != nil && e.Error() != syscall.Errno(0).Error() {
 			ErrorLog(fmt.Sprintf("GetWindowThreadProcessId failed for hwnd=0x%x: %v", hwnd, e))
 		} else {
 			TraceLog(fmt.Sprintf("Skipping window with PID 0: hwnd=0x%x", hwnd))
@@ -122,7 +121,7 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 		return 1
 	}
 
-	// Window title
+	// Window Title/FullTitle
 	window.Title = getWindowTitleByHandle(hwnd)
 	if window.Title == "" {
 		return 1
@@ -137,7 +136,7 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 		window.Executable = exePath
 	}
 
-	// Description from file version info if we have a path
+	// Windows Title - If Description is Available
 	if window.Executable != "" {
 		if desc, ferr := getFileDescriptionByPath(window.Executable); ferr != nil {
 			ErrorLog(fmt.Sprintf("getFileDescriptionByPath(%q) failed: %v", window.Executable, ferr))
@@ -151,18 +150,13 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	return 1
 }
 
-// getProcessImagePath returns the full path of the process executable.
 func getProcessImagePath(pid uint32) (path string, err error) {
-
-	// Needs PROCESS_QUERY_LIMITED_INFORMATION – works for 64-bit targets enumerating 64-bit processes
 	const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 
 	h, err := windows.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
 	if err != nil {
 		return "", err
 	}
-
-	// Make sure we always close the handle, and log if CloseHandle fails.
 	defer func() {
 		err := windows.CloseHandle(h)
 		if err != nil {
@@ -180,7 +174,7 @@ func getProcessImagePath(pid uint32) (path string, err error) {
 		uintptr(unsafe.Pointer(&size)),
 	)
 	if r0 == 0 {
-		if e != nil && e != syscall.Errno(0) {
+		if e != nil && e.Error() != syscall.Errno(0).Error() {
 			err = e
 			return "", err
 		}
@@ -191,8 +185,6 @@ func getProcessImagePath(pid uint32) (path string, err error) {
 	path = windows.UTF16ToString(buf[:size])
 	return path, nil
 }
-
-// getFileDescriptionByPath attempts to read the "FileDescription" from the file's version info.
 func getFileDescriptionByPath(path string) (desc string, err error) {
 	if path == "" {
 		return "", nil
@@ -209,7 +201,6 @@ func getFileDescriptionByPath(path string) (desc string, err error) {
 		uintptr(unsafe.Pointer(&handle)),
 	)
 	if r0 == 0 {
-		// No version info – not necessarily an error
 		TraceLog(fmt.Sprintf("No version info available for %q", path))
 		return "", nil
 	}
@@ -223,7 +214,7 @@ func getFileDescriptionByPath(path string) (desc string, err error) {
 		uintptr(unsafe.Pointer(&buf[0])),
 	)
 	if r0 == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
+		if callErr != nil && callErr.Error() != syscall.Errno(0).Error() {
 			err = callErr
 			return "", err
 		}
@@ -233,22 +224,25 @@ func getFileDescriptionByPath(path string) (desc string, err error) {
 
 	var transPtr uintptr
 	var transLen uint32
+	transStringPtr, _ := syscall.UTF16PtrFromString(`\VarFileInfo\Translation`)
+	if transStringPtr == nil {
+		return "", fmt.Errorf("UTF16PtrFromString failed for `\\VarFileInfo\\Translation`")
+	}
 	r0, _, callErr = procVerQueryValueW.Call(
 		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(`\VarFileInfo\Translation`))),
+		uintptr(unsafe.Pointer(&transStringPtr)),
 		uintptr(unsafe.Pointer(&transPtr)),
 		uintptr(unsafe.Pointer(&transLen)),
 	)
 	if r0 == 0 || transLen < 4 {
-		if callErr != nil && callErr != syscall.Errno(0) {
+		if callErr != nil && callErr.Error() != syscall.Errno(0).Error() {
 			TraceLog(fmt.Sprintf("VerQueryValueW(Translation) fallback for %q: %v", path, callErr))
 		}
-		// Fallback to US English / Unicode
 		return queryFileDescription(buf, 0x0409, 0x04B0)
 	}
 
-	lang := *(*uint16)(unsafe.Pointer(transPtr))
-	codepage := *(*uint16)(unsafe.Pointer(transPtr + unsafe.Sizeof(lang)))
+	lang := uint16(transPtr)
+	codepage := uint16(transPtr + unsafe.Sizeof(lang))
 
 	return queryFileDescription(buf, lang, codepage)
 }
@@ -258,14 +252,18 @@ func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 
 	var valuePtr uintptr
 	var valueLen uint32
+	subBlockPtr, _ := syscall.UTF16PtrFromString(subBlock)
+	if subBlockPtr == nil {
+		return "", fmt.Errorf("UTF16PtrFromString failed for %q", subBlock)
+	}
 	r0, _, callErr := procVerQueryValueW.Call(
 		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(subBlock))),
+		uintptr(unsafe.Pointer(subBlockPtr)),
 		uintptr(unsafe.Pointer(&valuePtr)),
 		uintptr(unsafe.Pointer(&valueLen)),
 	)
 	if r0 == 0 || valueLen == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
+		if callErr != nil && callErr.Error() != syscall.Errno(0).Error() {
 			err = callErr
 			return "", err
 		}
@@ -273,16 +271,15 @@ func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 		return "", err
 	}
 
-	desc = windows.UTF16PtrToString((*uint16)(unsafe.Pointer(valuePtr)))
+	desc = windows.UTF16PtrToString((*uint16)(unsafe.Pointer(&valuePtr)))
 	TraceLog(fmt.Sprintf("File description (%s): %q", subBlock, desc))
 	return desc, nil
 }
-
 func getWindowTitleByHandle(hwnd uintptr) string {
 	ret, _, callErr := procGetWindowTextLength.Call(hwnd)
 	length := uint32(ret)
 	if length == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
+		if callErr != nil && callErr.Error() != syscall.Errno(0).Error() {
 			TraceLog(fmt.Sprintf("GetWindowTextLength failed for hwnd=0x%x: %v", hwnd, callErr))
 		}
 		return ""
@@ -294,7 +291,7 @@ func getWindowTitleByHandle(hwnd uintptr) string {
 		uintptr(unsafe.Pointer(&buf[0])),
 		uintptr(length+1),
 	)
-	if callErr != nil && callErr != syscall.Errno(0) {
+	if callErr != nil && callErr.Error() != syscall.Errno(0).Error() {
 		TraceLog(fmt.Sprintf("GetWindowText failed for hwnd=0x%x: %v", hwnd, callErr))
 	}
 
@@ -312,7 +309,7 @@ func GetAllActiveWindows() []Window {
 	)
 
 	if ret == 0 {
-		if err != nil && err != syscall.Errno(0) {
+		if err != nil && err.Error() != syscall.Errno(0).Error() {
 			ErrorLog("Error while iterating through windows: " + err.Error())
 		} else {
 			ErrorLog("EnumWindows returned 0 without extended error")
