@@ -35,8 +35,8 @@ var (
 
 	/* Change States */
 	procSetWindowPos  = user32.NewProc("SetWindowPos")
-	procSetWindowLong = user32.NewProc("SetWindowLongW")
-	procGetWindowLong = user32.NewProc("GetWindowLongW")
+	procSetWindowLong = user32.NewProc("SetWindowLongPtrA")
+	procGetWindowLong = user32.NewProc("GetWindowLongPtrA")
 )
 
 const (
