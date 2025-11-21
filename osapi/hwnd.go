@@ -36,20 +36,37 @@ var (
 	/* Change States */
 	procSetWindowPos  = user32.NewProc("SetWindowPos")
 	procSetWindowLong = user32.NewProc("SetWindowLongW")
+	procGetWindowLong = user32.NewProc("GetWindowLongW")
 )
 
 const (
-	SM_CXSCREEN            = 0 // width of primary monitor
-	SM_CYSCREEN            = 1 // height of primary monitor
-	SWP_FRAMECHANGED       = 0x0020
-	SWP_SHOWWINDOW         = 0x0040
-	SWP_NOSIZE             = 0x0001
-	SWP_NOMOVE             = 0x0002
-	GWL_STYLE        int32 = -16
-	WS_POPUP               = 0x80000000
-	WS_VISIBLE             = 0x10000000
-	WS_CLIPSIBLINGS        = 0x20000000
-	WS_CLIPCHILDREN        = 0x40000000
+	SM_CXSCREEN             = 0 // width of primary monitor
+	SM_CYSCREEN             = 1 // height of primary monitor
+	SWP_FRAMECHANGED        = 0x0020
+	SWP_SHOWWINDOW          = 0x0040
+	SWP_NOSIZE              = 0x0001
+	SWP_NOMOVE              = 0x0002
+	SWP_NOZORDER            = 0x0004
+	SWP_NOACTIVATE          = 0x0010
+	SWP_NOOWNERZORDER       = 0x0200
+	GWL_STYLE         int32 = -16
+	GWL_EXSTYLE       int32 = -20
+	WS_POPUP                = 0x80000000
+	WS_VISIBLE              = 0x10000000
+	WS_CLIPSIBLINGS         = 0x20000000
+	WS_CLIPCHILDREN         = 0x40000000
+
+	// Standard style bits to remove for borderless
+	WS_CAPTION     = 0x00C00000
+	WS_THICKFRAME  = 0x00040000
+	WS_MINIMIZEBOX = 0x00020000
+	WS_MAXIMIZEBOX = 0x00010000
+	WS_SYSMENU     = 0x00080000
+
+	// Extended style bits to remove for borderless
+	WS_EX_DLGMODALFRAME = 0x00000001
+	WS_EX_CLIENTEDGE    = 0x00000200
+	WS_EX_STATICEDGE    = 0x00020000
 )
 
 /* Window Management */
@@ -331,17 +348,42 @@ func GetAllActiveWindows() []Window {
 	return activeWindows
 }
 func SetBorderlessWindow(hwnd uintptr) {
-	idx := int32(GWL_STYLE)
+	idxStyle := int32(GWL_STYLE)
+	curStyle, _, _ := procGetWindowLong.Call(
+		uintptr(hwnd),
+		uintptr(idxStyle),
+	)
+	newStyle := uint32(curStyle)
+	newStyle &^= (WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU)
+	newStyle |= (WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN)
+
 	r, _, callErr := procSetWindowLong.Call(
 		uintptr(hwnd),
-		uintptr(idx),
-		uintptr(WS_POPUP|WS_VISIBLE|WS_CLIPSIBLINGS|WS_CLIPCHILDREN),
+		uintptr(idxStyle),
+		uintptr(newStyle),
 	)
-	if r == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
-			ErrorLog(fmt.Sprintf("SetWindowLongW failed for hwnd=0x%x: %v", hwnd, callErr))
-			return
-		}
+	if r == 0 && callErr != nil && callErr != syscall.Errno(0) {
+		ErrorLog(fmt.Sprintf("SetWindowLongW(GWL_STYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
+		return
 	}
-	SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_FRAMECHANGED|SWP_SHOWWINDOW|SWP_NOMOVE|SWP_NOSIZE)
+	idxExStyle := int32(GWL_EXSTYLE)
+	curExStyle, _, _ := procGetWindowLong.Call(
+		uintptr(hwnd),
+		uintptr(idxExStyle),
+	)
+	newExStyle := uint32(curExStyle)
+	newExStyle &^= (WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE)
+
+	r, _, callErr = procSetWindowLong.Call(
+		uintptr(hwnd),
+		uintptr(idxExStyle),
+		uintptr(newExStyle),
+	)
+	if r == 0 && callErr != nil && callErr != syscall.Errno(0) {
+		ErrorLog(fmt.Sprintf("SetWindowLongW(GWL_EXSTYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
+		return
+	}
+
+	// Apply the style changes without moving/sizing or changing Z-order
+	SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_FRAMECHANGED|SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_NOOWNERZORDER|SWP_NOACTIVATE|SWP_SHOWWINDOW)
 }
