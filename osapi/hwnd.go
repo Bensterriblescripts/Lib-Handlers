@@ -34,14 +34,22 @@ var (
 	procVerQueryValueW          = version.NewProc("VerQueryValueW")
 
 	/* Change States */
-	procSetWindowPos = user32.NewProc("SetWindowPos")
+	procSetWindowPos  = user32.NewProc("SetWindowPos")
+	procSetWindowLong = user32.NewProc("SetWindowLongW")
 )
 
 const (
-	SM_CXSCREEN      = 0 // width of primary monitor
-	SM_CYSCREEN      = 1 // height of primary monitor
-	SWP_FRAMECHANGED = 0x0020
-	SWP_SHOWWINDOW   = 0x0040
+	SM_CXSCREEN            = 0 // width of primary monitor
+	SM_CYSCREEN            = 1 // height of primary monitor
+	SWP_FRAMECHANGED       = 0x0020
+	SWP_SHOWWINDOW         = 0x0040
+	SWP_NOSIZE             = 0x0001
+	SWP_NOMOVE             = 0x0002
+	GWL_STYLE        int32 = -16
+	WS_POPUP               = 0x80000000
+	WS_VISIBLE             = 0x10000000
+	WS_CLIPSIBLINGS        = 0x20000000
+	WS_CLIPCHILDREN        = 0x40000000
 )
 
 /* Window Management */
@@ -96,6 +104,7 @@ type Window struct {
 	Handle     uintptr
 	Process    uint32
 	Executable string
+	Style      uint32
 }
 
 var activeWindows []Window
@@ -123,7 +132,7 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	}
 
 	// Window title
-	window.Title = getWindowTitleByHandle(hwnd)
+	window.Title = GetWindowTitleByHandle(hwnd)
 	if window.Title == "" {
 		return 1
 	}
@@ -191,8 +200,6 @@ func getProcessImagePath(pid uint32) (path string, err error) {
 	path = windows.UTF16ToString(buf[:size])
 	return path, nil
 }
-
-// getFileDescriptionByPath attempts to read the "FileDescription" from the file's version info.
 func getFileDescriptionByPath(path string) (desc string, err error) {
 	if path == "" {
 		return "", nil
@@ -278,7 +285,7 @@ func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 	return desc, nil
 }
 
-func getWindowTitleByHandle(hwnd uintptr) string {
+func GetWindowTitleByHandle(hwnd uintptr) string {
 	ret, _, callErr := procGetWindowTextLength.Call(hwnd)
 	length := uint32(ret)
 	if length == 0 {
@@ -322,4 +329,19 @@ func GetAllActiveWindows() []Window {
 
 	TraceLog(fmt.Sprintf("GetAllActiveWindows finished, found %d windows", len(activeWindows)))
 	return activeWindows
+}
+func SetBorderlessWindow(hwnd uintptr) {
+	idx := int32(GWL_STYLE)
+	r, _, callErr := procSetWindowLong.Call(
+		uintptr(hwnd),
+		uintptr(idx),
+		uintptr(WS_POPUP|WS_VISIBLE|WS_CLIPSIBLINGS|WS_CLIPCHILDREN),
+	)
+	if r == 0 {
+		if callErr != nil && callErr != syscall.Errno(0) {
+			ErrorLog(fmt.Sprintf("SetWindowLongW failed for hwnd=0x%x: %v", hwnd, callErr))
+			return
+		}
+	}
+	SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_FRAMECHANGED|SWP_SHOWWINDOW|SWP_NOMOVE|SWP_NOSIZE)
 }
