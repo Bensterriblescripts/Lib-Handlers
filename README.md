@@ -150,23 +150,24 @@ You must add a defer to close the files and any ssh handlers before the program 
 - `Panic("critical failure") // logs with stack and exits`
 - `Assert(10, 10) // panics if types/values mismatch`
 
-### net (package network)
+### net
 - `SSHTunnel(client, "127.0.0.1:8080", "remote.host:80"); defer ln.Close() // creates TCP tunnel via SSH`
 - `LoadDefaultPrivateKeys() // reads ~/.ssh/id_ed25519 or id_rsa`
 - `CreateShellStream(&w, "ls", "-la") // streams shell output to HTTP client`
 - `CreateInternalStream(&w) // returns writers streaming to client`
 
-### os (package osapi)
+### os
 - `HideConsole(cmd) // Windows-only: hides window for process`
-- `Run("echo hello") // runs shell command, returns combined output`
+- `Run("echo hello") // runs shell command, returns combined output and ok`
 - `EnsurePath("/tmp/app/config.ini") // creates parent dirs if needed`
-
-### os (Windows HWND helpers; package osapi)
 - `SetWindowFullscreen("Untitled - Notepad") // Windows-only: makes window fullscreen`
-- `GetScreenSize() // -> screen width/height`
-- `GetSystemMetrics(SM_CXSCREEN) // -> metric value`
-- `FindWindowByTitle("Untitled - Notepad") // -> window handle`
-- `SetWindowPos(hwnd, 0, 0, 0, w, h, SWP_SHOWWINDOW|SWP_FRAMECHANGED) // moves/resizes window`
+- `GetScreenSize() // Windows-only: screen width/height`
+- `GetSystemMetrics(SM_CXSCREEN) // Windows-only: metric value`
+- `FindWindowByTitle("Untitled - Notepad") // Windows-only: window handle`
+- `SetWindowPos(hwnd, 0, 0, 0, w, h, SWP_SHOWWINDOW|SWP_FRAMECHANGED) // Windows-only: moves/resizes window`
+- `GetAllActiveWindows() // Windows-only: []Window of visible top-level windows`
+- `type Window struct { Title, FullTitle string; Handle uintptr; Process uint32; Executable string }` // Windows-only: Window information struct
+- `const SM_CXSCREEN, SM_CYSCREEN, SWP_SHOWWINDOW, SWP_FRAMECHANGED` // Windows-only
 
 ### test
 - `BenchmarkFunctions(fn1, fn2, 1000) // logs total and per-call ms for two funcs`
