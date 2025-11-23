@@ -9,7 +9,7 @@ import (
 )
 
 func Run(command string) (string, bool) {
-	cmd := exec.Command("bash", "-c", command)
+	cmd := exec.Command("pwsh.exe", "-c", command)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
