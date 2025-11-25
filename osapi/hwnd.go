@@ -23,6 +23,13 @@ var (
 	procIsWindowVisible     = user32.NewProc("IsWindowVisible")
 	procFindWindowW         = user32.NewProc("FindWindowW")
 	procGetSystemMetrics    = user32.NewProc("GetSystemMetrics")
+	procGetWindowLongW      = user32.NewProc("GetWindowLongW")
+	procSetWindowLongW      = user32.NewProc("SetWindowLongW")
+
+	/* Get Monitor Information */
+	procMonitorFromWindow = user32.NewProc("MonitorFromWindow")
+	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
+	procShowWindow        = user32.NewProc("ShowWindow")
 
 	/* Process */
 	procGetWindowThreadProcessId   = user32.NewProc("GetWindowThreadProcessId")
@@ -34,9 +41,7 @@ var (
 	procVerQueryValueW          = version.NewProc("VerQueryValueW")
 
 	/* Change States */
-	procSetWindowPos  = user32.NewProc("SetWindowPos")
-	procSetWindowLong = user32.NewProc("SetWindowLongPtrA")
-	procGetWindowLong = user32.NewProc("GetWindowLongPtrA")
+	procSetWindowPos = user32.NewProc("SetWindowPos")
 )
 
 const (
@@ -67,7 +72,26 @@ const (
 	WS_EX_DLGMODALFRAME = 0x00000001
 	WS_EX_CLIENTEDGE    = 0x00000200
 	WS_EX_STATICEDGE    = 0x00020000
+
+	// Add these constants after the existing WS_* constants
+	MONITOR_DEFAULTTONEAREST = 0x00000002
+	SW_SHOW                  = 5
+	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
 )
+
+type RECT struct {
+	Left   int32
+	Top    int32
+	Right  int32
+	Bottom int32
+}
+
+type MONITORINFO struct {
+	CbSize    uint32
+	RcMonitor RECT
+	RcWork    RECT
+	DwFlags   uint32
+}
 
 /* Window Management */
 func SetWindowFullscreen(windowname string) {
@@ -127,15 +151,12 @@ type Window struct {
 var activeWindows []Window
 
 func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
-	// Visible windows only
 	if visible, _, _ := procIsWindowVisible.Call(hwnd); visible == 0 {
 		return 1
 	}
 
 	var window Window
 	window.Handle = hwnd
-
-	// Process ID
 	if _, _, e := procGetWindowThreadProcessId.Call(
 		hwnd,
 		uintptr(unsafe.Pointer(&window.Process)),
@@ -176,11 +197,7 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	activeWindows = append(activeWindows, window)
 	return 1
 }
-
-// getProcessImagePath returns the full path of the process executable.
 func getProcessImagePath(pid uint32) (path string, err error) {
-
-	// Needs PROCESS_QUERY_LIMITED_INFORMATION – works for 64-bit targets enumerating 64-bit processes
 	const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 
 	h, err := windows.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
@@ -188,7 +205,6 @@ func getProcessImagePath(pid uint32) (path string, err error) {
 		return "", err
 	}
 
-	// Make sure we always close the handle, and log if CloseHandle fails.
 	defer func() {
 		err := windows.CloseHandle(h)
 		if err != nil {
@@ -233,7 +249,6 @@ func getFileDescriptionByPath(path string) (desc string, err error) {
 		uintptr(unsafe.Pointer(&handle)),
 	)
 	if r0 == 0 {
-		// No version info – not necessarily an error
 		TraceLog(fmt.Sprintf("No version info available for %q", path))
 		return "", nil
 	}
@@ -348,42 +363,72 @@ func GetAllActiveWindows() []Window {
 	return activeWindows
 }
 func SetBorderlessWindow(hwnd uintptr) {
-	idxStyle := int32(GWL_STYLE)
-	curStyle, _, _ := procGetWindowLong.Call(
-		uintptr(hwnd),
-		uintptr(idxStyle),
+	r0, _, callErr := procMonitorFromWindow.Call(
+		hwnd,
+		uintptr(MONITOR_DEFAULTTONEAREST),
 	)
-	newStyle := uint32(curStyle)
-	newStyle &^= (WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU)
-	newStyle |= (WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN)
+	if r0 == 0 {
+		if callErr != nil && callErr != syscall.Errno(0) {
+			ErrorLog(fmt.Sprintf("MonitorFromWindow failed for hwnd=0x%x: %v", hwnd, callErr))
+		}
+		return
+	}
 
-	r, _, callErr := procSetWindowLong.Call(
-		uintptr(hwnd),
-		uintptr(idxStyle),
-		uintptr(newStyle),
+	monitor := r0
+
+	mi := MONITORINFO{
+		CbSize: uint32(unsafe.Sizeof(MONITORINFO{})),
+	}
+
+	r1, _, callErr := procGetMonitorInfoW.Call(
+		monitor,
+		uintptr(unsafe.Pointer(&mi)),
 	)
-	if r == 0 && callErr != nil && callErr != syscall.Errno(0) {
+	if r1 == 0 {
+		if callErr != nil && callErr != syscall.Errno(0) {
+			ErrorLog(fmt.Sprintf("GetMonitorInfoW failed for monitor=0x%x: %v", monitor, callErr))
+		}
+		return
+	}
+
+	x := mi.RcMonitor.Left
+	y := mi.RcMonitor.Top
+	width := mi.RcMonitor.Right - mi.RcMonitor.Left
+	height := mi.RcMonitor.Bottom - mi.RcMonitor.Top
+	styleIndex := int32(GWL_STYLE)
+	origStyle, _, callErr := procGetWindowLongW.Call(
+		hwnd,
+		uintptr(styleIndex),
+	)
+	if origStyle == 0 && callErr != nil && callErr != syscall.Errno(0) {
+		ErrorLog(fmt.Sprintf("GetWindowLongW(GWL_STYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
+		return
+	}
+
+	newStyle := origStyle &^ uintptr(WS_OVERLAPPEDWINDOW)
+
+	r2, _, callErr := procSetWindowLongW.Call(
+		hwnd,
+		uintptr(styleIndex),
+		newStyle,
+	)
+	if r2 == 0 && callErr != nil && callErr != syscall.Errno(0) {
 		ErrorLog(fmt.Sprintf("SetWindowLongW(GWL_STYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
 		return
 	}
-	idxExStyle := int32(GWL_EXSTYLE)
-	curExStyle, _, _ := procGetWindowLong.Call(
-		uintptr(hwnd),
-		uintptr(idxExStyle),
+	SetWindowPos(
+		hwnd,
+		0,
+		x,
+		y,
+		width,
+		height,
+		SWP_FRAMECHANGED|SWP_SHOWWINDOW,
 	)
-	newExStyle := uint32(curExStyle)
-	newExStyle &^= (WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE)
 
-	r, _, callErr = procSetWindowLong.Call(
-		uintptr(hwnd),
-		uintptr(idxExStyle),
-		uintptr(newExStyle),
+	// Ensure the window is shown
+	procShowWindow.Call(
+		hwnd,
+		uintptr(SW_SHOW),
 	)
-	if r == 0 && callErr != nil && callErr != syscall.Errno(0) {
-		ErrorLog(fmt.Sprintf("SetWindowLongW(GWL_EXSTYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
-		return
-	}
-
-	// Apply the style changes without moving/sizing or changing Z-order
-	SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_FRAMECHANGED|SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_NOOWNERZORDER|SWP_NOACTIVATE|SWP_SHOWWINDOW)
 }
