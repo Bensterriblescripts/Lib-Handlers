@@ -431,14 +431,10 @@ func SetBorderlessWindow(hwnd uintptr) {
 			break
 		}
 	}
-}
-func MakeWindowed(windowTitle string) error {
-	hwnd := FindWindowByTitle(windowTitle)
-	if hwnd == 0 {
-		return fmt.Errorf("window not found: %s", windowTitle)
-	}
 
-	// Determine the monitor where this window currently resides
+	SetFocus(hwnd)
+}
+func SetWindowWindowed(hwnd uintptr) error {
 	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
 	if r0 == 0 {
 		return fmt.Errorf("failed to get monitor for window")
@@ -482,22 +478,31 @@ func MakeWindowed(windowTitle string) error {
 
 	procShowWindow.Call(hwnd, uintptr(SW_SHOW))
 
+	for _, window := range activeWindows {
+		if window.Handle == hwnd {
+			window.WindowState = "Windowed"
+			break
+		}
+	}
+
+	SetFocus(hwnd)
+
 	return nil
 }
 func SetFocus(hwnd uintptr) error {
 	if hwnd == 0 {
-		return fmt.Errorf("window handle is null")
+		return fmt.Errorf("SetFocus: window handle is null")
 	}
 	procShowWindow.Call(hwnd, uintptr(SW_SHOWMAXIMIZED))
 
 	r2, _, _ := procBringWindowToTop.Call(hwnd)
 	if r2 == 0 {
-		return fmt.Errorf("failed to bring window to top")
+		return fmt.Errorf("SetFocus: failed to bring window to top")
 	}
 
 	r3, _, _ := procSetForegroundWindow.Call(hwnd)
 	if r3 == 0 {
-		return fmt.Errorf("failed to set foreground window")
+		return fmt.Errorf("SetFocus: failed to set foreground window")
 	}
 
 	return nil
