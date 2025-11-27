@@ -70,30 +70,7 @@ const (
 	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
 )
 
-/* Window Management */
-func SetWindowFullscreen(windowname string) {
-	hwnd := FindWindowByTitle(windowname)
-	if hwnd == 0 {
-		return
-	}
-	screenWidth, screenHeight := GetScreenSize()
-
-	SetWindowPos(hwnd, 0, 0, 0, screenWidth, screenHeight, SWP_SHOWWINDOW|SWP_FRAMECHANGED)
-}
-func SetWindowPos(hwnd uintptr, hwndInsertAfter uintptr, x, y, cx, cy int32, flags uint32) bool {
-	r, _, _ := procSetWindowPos.Call(
-		uintptr(hwnd),
-		uintptr(hwndInsertAfter),
-		uintptr(x),
-		uintptr(y),
-		uintptr(cx),
-		uintptr(cy),
-		uintptr(flags),
-	)
-	return r != 0
-}
-
-/* Window Information */
+/* Window Information and Retrieval */
 func FindWindowByTitle(title string) uintptr {
 	t, err := windows.UTF16PtrFromString(title)
 	if err != nil {
@@ -105,6 +82,50 @@ func FindWindowByTitle(title string) uintptr {
 	)
 
 	return r
+}
+func GetWindowTitle(hwnd uintptr) string {
+	ret, _, callErr := procGetWindowTextLength.Call(hwnd)
+	length := uint32(ret)
+	if length == 0 {
+		if callErr != nil && callErr != syscall.Errno(0) {
+			TraceLog(fmt.Sprintf("GetWindowTextLength failed for hwnd=0x%x: %v", hwnd, callErr))
+		}
+		return ""
+	}
+	buf := make([]uint16, length+1)
+
+	_, _, callErr = procGetWindowText.Call(
+		hwnd,
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(length+1),
+	)
+	if callErr != nil && callErr != syscall.Errno(0) {
+		TraceLog(fmt.Sprintf("GetWindowText failed for hwnd=0x%x: %v", hwnd, callErr))
+	}
+
+	return windows.UTF16ToString(buf)
+}
+func GetAllActiveWindows() []Window {
+	TraceLog("GetAllActiveWindows started")
+	activeWindows = make([]Window, 0)
+
+	cb := syscall.NewCallback(enumWindowsCallback)
+	ret, _, err := procEnumWindows.Call(
+		cb,
+		0,
+	)
+
+	if ret == 0 {
+		if err != nil && err != syscall.Errno(0) {
+			ErrorLog("Error while iterating through windows: " + err.Error())
+		} else {
+			ErrorLog("EnumWindows returned 0 without extended error")
+		}
+		return nil
+	}
+
+	TraceLog(fmt.Sprintf("GetAllActiveWindows finished, found %d windows", len(activeWindows)))
+	return activeWindows
 }
 func GetScreenSize() (width, height int32) {
 	w := GetSystemMetrics(SM_CXSCREEN)
@@ -146,14 +167,12 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 		return 1
 	}
 
-	// Window title
 	window.Title = GetWindowTitle(hwnd)
 	if window.Title == "" {
 		return 1
 	}
 	window.FullTitle = window.Title
 
-	// Executable path
 	exePath, err := getProcessImagePath(window.Process)
 	if err != nil {
 		ErrorLog(fmt.Sprintf("getProcessImagePath failed for PID %d: %v", window.Process, err))
@@ -161,7 +180,6 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 		window.Executable = exePath
 	}
 
-	// Description from file version info if we have a path
 	if window.Executable != "" {
 		if desc, ferr := getFileDescriptionByPath(window.Executable); ferr != nil {
 			ErrorLog(fmt.Sprintf("getFileDescriptionByPath(%q) failed: %v", window.Executable, ferr))
@@ -296,59 +314,12 @@ func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 	return desc, nil
 }
 
-func GetWindowTitle(hwnd uintptr) string {
-	ret, _, callErr := procGetWindowTextLength.Call(hwnd)
-	length := uint32(ret)
-	if length == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
-			TraceLog(fmt.Sprintf("GetWindowTextLength failed for hwnd=0x%x: %v", hwnd, callErr))
-		}
-		return ""
-	}
-	buf := make([]uint16, length+1)
-
-	_, _, callErr = procGetWindowText.Call(
-		hwnd,
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(length+1),
-	)
-	if callErr != nil && callErr != syscall.Errno(0) {
-		TraceLog(fmt.Sprintf("GetWindowText failed for hwnd=0x%x: %v", hwnd, callErr))
-	}
-
-	return windows.UTF16ToString(buf)
-}
-
-func GetAllActiveWindows() []Window {
-	TraceLog("GetAllActiveWindows started")
-	activeWindows = make([]Window, 0)
-
-	cb := syscall.NewCallback(enumWindowsCallback)
-	ret, _, err := procEnumWindows.Call(
-		cb,
-		0,
-	)
-
-	if ret == 0 {
-		if err != nil && err != syscall.Errno(0) {
-			ErrorLog("Error while iterating through windows: " + err.Error())
-		} else {
-			ErrorLog("EnumWindows returned 0 without extended error")
-		}
-		return nil
-	}
-
-	TraceLog(fmt.Sprintf("GetAllActiveWindows finished, found %d windows", len(activeWindows)))
-	return activeWindows
-}
-
 type RECT struct {
 	Left   int32
 	Top    int32
 	Right  int32
 	Bottom int32
 }
-
 type MONITORINFO struct {
 	CbSize    uint32
 	RcMonitor RECT
@@ -356,6 +327,7 @@ type MONITORINFO struct {
 	DwFlags   uint32
 }
 
+/* Alter Window State and Focus */
 func SetBorderlessWindow(hwnd uintptr) {
 	x, y, width, height := getMonitorByWindow(hwnd)
 	styleIndex := int32(GWL_STYLE)
@@ -379,7 +351,7 @@ func SetBorderlessWindow(hwnd uintptr) {
 		ErrorLog(fmt.Sprintf("SetWindowLongW(GWL_STYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
 		return
 	}
-	SetWindowPos(
+	setWindowPos(
 		hwnd,
 		0,
 		x,
@@ -413,7 +385,7 @@ func SetWindowWindowed(hwnd uintptr) {
 
 	procSetWindowLongW.Call(hwnd, uintptr(styleIndex), newStyle)
 
-	SetWindowPos(
+	setWindowPos(
 		hwnd,
 		0,
 		x,
@@ -471,4 +443,16 @@ func getMonitorByWindow(hwnd uintptr) (x int32, y int32, width int32, height int
 	width = mi.RcMonitor.Right - mi.RcMonitor.Left
 	height = mi.RcMonitor.Bottom - mi.RcMonitor.Top
 	return x, y, width, height
+}
+func setWindowPos(hwnd uintptr, hwndInsertAfter uintptr, x, y, cx, cy int32, flags uint32) bool {
+	r, _, _ := procSetWindowPos.Call(
+		uintptr(hwnd),
+		uintptr(hwndInsertAfter),
+		uintptr(x),
+		uintptr(y),
+		uintptr(cx),
+		uintptr(cy),
+		uintptr(flags),
+	)
+	return r != 0
 }
