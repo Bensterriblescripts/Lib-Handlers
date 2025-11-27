@@ -42,8 +42,6 @@ func InitVars() {
 		UserProfile = PanicError(os.UserHomeDir())
 		BaseLogsFolder = UserProfile + "/local/Logs/" + AppName + "/"
 	}
-
-	ProgramLogString = ExecutableName + "/"
 }
 func InitErrorLog(filename string) {
 	ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
