@@ -58,6 +58,8 @@ keyvaluepair := ReadConfig()
 This here is main purpose of the library.
 Golangs error handling sucks, you cannot tell me otherwise. 
 
+BE WARNED: These functions are innefficient and each call contains a deep copy. Avoid using these in production where possible.
+
 All calls to these functions writes into C:\Local\Logs\*Appname*\ as well as stdout.
 *Functions with Err expect only (error), functions with Error expect (T, error)*
 ```go
