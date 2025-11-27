@@ -49,21 +49,12 @@ var (
 )
 
 const (
-	SM_CXSCREEN             = 0 // width of primary monitor
-	SM_CYSCREEN             = 1 // height of primary monitor
-	SWP_FRAMECHANGED        = 0x0020
-	SWP_SHOWWINDOW          = 0x0040
-	SWP_NOSIZE              = 0x0001
-	SWP_NOMOVE              = 0x0002
-	SWP_NOZORDER            = 0x0004
-	SWP_NOACTIVATE          = 0x0010
-	SWP_NOOWNERZORDER       = 0x0200
-	GWL_STYLE         int32 = -16
-	GWL_EXSTYLE       int32 = -20
-	WS_POPUP                = 0x80000000
-	WS_VISIBLE              = 0x10000000
-	WS_CLIPSIBLINGS         = 0x20000000
-	WS_CLIPCHILDREN         = 0x40000000
+	SM_CXSCREEN            = 0 // width of primary monitor
+	SM_CYSCREEN            = 1 // height of primary monitor
+	SWP_FRAMECHANGED       = 0x0020
+	SWP_SHOWWINDOW         = 0x0040
+	GWL_STYLE        int32 = -16
+	WS_POPUP               = 0x80000000
 
 	// Standard style bits to remove for borderless
 	WS_CAPTION     = 0x00C00000
@@ -72,31 +63,12 @@ const (
 	WS_MAXIMIZEBOX = 0x00010000
 	WS_SYSMENU     = 0x00080000
 
-	// Extended style bits to remove for borderless
-	WS_EX_DLGMODALFRAME = 0x00000001
-	WS_EX_CLIENTEDGE    = 0x00000200
-	WS_EX_STATICEDGE    = 0x00020000
-
 	// Add these constants after the existing WS_* constants
 	MONITOR_DEFAULTTONEAREST = 0x00000002
 	SW_SHOW                  = 5
 	SW_SHOWMAXIMIZED         = 3
 	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
 )
-
-type RECT struct {
-	Left   int32
-	Top    int32
-	Right  int32
-	Bottom int32
-}
-
-type MONITORINFO struct {
-	CbSize    uint32
-	RcMonitor RECT
-	RcWork    RECT
-	DwFlags   uint32
-}
 
 /* Window Management */
 func SetWindowFullscreen(windowname string) {
@@ -290,8 +262,10 @@ func getFileDescriptionByPath(path string) (desc string, err error) {
 		return queryFileDescription(buf, 0x0409, 0x04B0)
 	}
 
-	lang := *(*uint16)(unsafe.Pointer(transPtr))
-	codepage := *(*uint16)(unsafe.Pointer(transPtr + unsafe.Sizeof(lang)))
+	start := uintptr(unsafe.Pointer(&buf[0]))
+	offset := transPtr - start
+	lang := *(*uint16)(unsafe.Pointer(&buf[offset]))
+	codepage := *(*uint16)(unsafe.Pointer(&buf[offset+2]))
 
 	return queryFileDescription(buf, lang, codepage)
 }
@@ -315,7 +289,9 @@ func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 		return "", err
 	}
 
-	desc = windows.UTF16PtrToString((*uint16)(unsafe.Pointer(valuePtr)))
+	start := uintptr(unsafe.Pointer(&buf[0]))
+	offset := valuePtr - start
+	desc = windows.UTF16PtrToString((*uint16)(unsafe.Pointer(&buf[int(offset)])))
 	TraceLog(fmt.Sprintf("File description (%s): %q", subBlock, desc))
 	return desc, nil
 }
@@ -365,6 +341,21 @@ func GetAllActiveWindows() []Window {
 	TraceLog(fmt.Sprintf("GetAllActiveWindows finished, found %d windows", len(activeWindows)))
 	return activeWindows
 }
+
+type RECT struct {
+	Left   int32
+	Top    int32
+	Right  int32
+	Bottom int32
+}
+
+type MONITORINFO struct {
+	CbSize    uint32
+	RcMonitor RECT
+	RcWork    RECT
+	DwFlags   uint32
+}
+
 func SetBorderlessWindow(hwnd uintptr) {
 	r0, _, callErr := procMonitorFromWindow.Call(
 		hwnd,
@@ -441,7 +432,6 @@ func SetBorderlessWindow(hwnd uintptr) {
 		}
 	}
 }
-
 func MakeWindowed(windowTitle string) error {
 	hwnd := FindWindowByTitle(windowTitle)
 	if hwnd == 0 {
@@ -494,7 +484,6 @@ func MakeWindowed(windowTitle string) error {
 
 	return nil
 }
-
 func SetFocus(hwnd uintptr) error {
 	if hwnd == 0 {
 		return fmt.Errorf("window handle is null")
