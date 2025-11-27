@@ -357,38 +357,7 @@ type MONITORINFO struct {
 }
 
 func SetBorderlessWindow(hwnd uintptr) {
-	r0, _, callErr := procMonitorFromWindow.Call(
-		hwnd,
-		uintptr(MONITOR_DEFAULTTONEAREST),
-	)
-	if r0 == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
-			ErrorLog(fmt.Sprintf("MonitorFromWindow failed for hwnd=0x%x: %v", hwnd, callErr))
-		}
-		return
-	}
-
-	monitor := r0
-
-	mi := MONITORINFO{
-		CbSize: uint32(unsafe.Sizeof(MONITORINFO{})),
-	}
-
-	r1, _, callErr := procGetMonitorInfoW.Call(
-		monitor,
-		uintptr(unsafe.Pointer(&mi)),
-	)
-	if r1 == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
-			ErrorLog(fmt.Sprintf("GetMonitorInfoW failed for monitor=0x%x: %v", monitor, callErr))
-		}
-		return
-	}
-
-	x := mi.RcMonitor.Left
-	y := mi.RcMonitor.Top
-	width := mi.RcMonitor.Right - mi.RcMonitor.Left
-	height := mi.RcMonitor.Bottom - mi.RcMonitor.Top
+	x, y, width, height := getMonitorByWindow(hwnd)
 	styleIndex := int32(GWL_STYLE)
 	origStyle, _, callErr := procGetWindowLongW.Call(
 		hwnd,
@@ -420,7 +389,6 @@ func SetBorderlessWindow(hwnd uintptr) {
 		SWP_FRAMECHANGED|SWP_SHOWWINDOW,
 	)
 
-	// Ensure the window is shown
 	procShowWindow.Call(
 		hwnd,
 		uintptr(SW_SHOW),
@@ -434,38 +402,17 @@ func SetBorderlessWindow(hwnd uintptr) {
 
 	SetFocus(hwnd)
 }
-func SetWindowWindowed(hwnd uintptr) error {
-	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
-	if r0 == 0 {
-		return fmt.Errorf("failed to get monitor for window")
-	}
-	monitor := r0
+func SetWindowWindowed(hwnd uintptr) {
+	x, y, width, height := getMonitorByWindow(hwnd)
 
-	// Query monitor work area (or full area).
-	mi := MONITORINFO{
-		CbSize: uint32(unsafe.Sizeof(MONITORINFO{})),
-	}
-	r1, _, _ := procGetMonitorInfoW.Call(monitor, uintptr(unsafe.Pointer(&mi)))
-	if r1 == 0 {
-		return fmt.Errorf("GetMonitorInfoW failed")
-	}
-
-	x := mi.RcMonitor.Left
-	y := mi.RcMonitor.Top
-	width := mi.RcMonitor.Right - mi.RcMonitor.Left
-	height := mi.RcMonitor.Bottom - mi.RcMonitor.Top
-
-	// Get current style
 	styleIndex := int32(GWL_STYLE)
 	r2, _, _ := procGetWindowLongW.Call(hwnd, uintptr(styleIndex))
 	origStyle := r2
 
-	// Set new style: Add OVERLAPPEDWINDOW, remove POPUP
 	newStyle := (origStyle | uintptr(WS_OVERLAPPEDWINDOW)) &^ uintptr(WS_POPUP)
 
 	procSetWindowLongW.Call(hwnd, uintptr(styleIndex), newStyle)
 
-	// Position and size to the monitor rect
 	SetWindowPos(
 		hwnd,
 		0,
@@ -486,24 +433,42 @@ func SetWindowWindowed(hwnd uintptr) error {
 	}
 
 	SetFocus(hwnd)
-
-	return nil
 }
-func SetFocus(hwnd uintptr) error {
+func SetFocus(hwnd uintptr) {
 	if hwnd == 0 {
-		return fmt.Errorf("SetFocus: window handle is null")
+		ErrorLog("SetFocus: window handle is null")
+		return
 	}
 	procShowWindow.Call(hwnd, uintptr(SW_SHOWMAXIMIZED))
 
 	r2, _, _ := procBringWindowToTop.Call(hwnd)
 	if r2 == 0 {
-		return fmt.Errorf("SetFocus: failed to bring window to top")
+		ErrorLog("SetFocus: failed to bring window to top")
+		return
 	}
 
 	r3, _, _ := procSetForegroundWindow.Call(hwnd)
 	if r3 == 0 {
-		return fmt.Errorf("SetFocus: failed to set foreground window")
+		ErrorLog("SetFocus: failed to set foreground window")
+		return
 	}
-
-	return nil
+}
+func getMonitorByWindow(hwnd uintptr) (x int32, y int32, width int32, height int32) {
+	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
+	if r0 == 0 {
+		ErrorLog("failed to get monitor for window")
+	}
+	monitor := r0
+	mi := MONITORINFO{
+		CbSize: uint32(unsafe.Sizeof(MONITORINFO{})),
+	}
+	r1, _, _ := procGetMonitorInfoW.Call(monitor, uintptr(unsafe.Pointer(&mi)))
+	if r1 == 0 {
+		ErrorLog("GetMonitorInfoW failed")
+	}
+	x = mi.RcMonitor.Left
+	y = mi.RcMonitor.Top
+	width = mi.RcMonitor.Right - mi.RcMonitor.Left
+	height = mi.RcMonitor.Bottom - mi.RcMonitor.Top
+	return x, y, width, height
 }
