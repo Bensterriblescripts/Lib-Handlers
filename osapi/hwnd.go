@@ -42,6 +42,10 @@ var (
 
 	/* Change States */
 	procSetWindowPos = user32.NewProc("SetWindowPos")
+
+	/* Focus / Activation */
+	procBringWindowToTop    = user32.NewProc("BringWindowToTop")
+	procSetForegroundWindow = user32.NewProc("SetForegroundWindow")
 )
 
 const (
@@ -76,6 +80,7 @@ const (
 	// Add these constants after the existing WS_* constants
 	MONITOR_DEFAULTTONEAREST = 0x00000002
 	SW_SHOW                  = 5
+	SW_SHOWMAXIMIZED         = 3
 	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
 )
 
@@ -140,12 +145,12 @@ func GetSystemMetrics(index int32) int32 {
 }
 
 type Window struct {
-	Title      string
-	FullTitle  string
-	Handle     uintptr
-	Process    uint32
-	Executable string
-	Style      uint32
+	Title       string
+	FullTitle   string
+	Handle      uintptr
+	Process     uint32
+	Executable  string
+	WindowState string
 }
 
 var activeWindows []Window
@@ -170,7 +175,7 @@ func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	}
 
 	// Window title
-	window.Title = GetWindowTitleByHandle(hwnd)
+	window.Title = GetWindowTitle(hwnd)
 	if window.Title == "" {
 		return 1
 	}
@@ -282,7 +287,6 @@ func getFileDescriptionByPath(path string) (desc string, err error) {
 		if callErr != nil && callErr != syscall.Errno(0) {
 			TraceLog(fmt.Sprintf("VerQueryValueW(Translation) fallback for %q: %v", path, callErr))
 		}
-		// Fallback to US English / Unicode
 		return queryFileDescription(buf, 0x0409, 0x04B0)
 	}
 
@@ -291,7 +295,6 @@ func getFileDescriptionByPath(path string) (desc string, err error) {
 
 	return queryFileDescription(buf, lang, codepage)
 }
-
 func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err error) {
 	subBlock := fmt.Sprintf(`\StringFileInfo\%04x%04x\FileDescription`, lang, codepage)
 
@@ -317,7 +320,7 @@ func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 	return desc, nil
 }
 
-func GetWindowTitleByHandle(hwnd uintptr) string {
+func GetWindowTitle(hwnd uintptr) string {
 	ret, _, callErr := procGetWindowTextLength.Call(hwnd)
 	length := uint32(ret)
 	if length == 0 {
@@ -431,4 +434,82 @@ func SetBorderlessWindow(hwnd uintptr) {
 		hwnd,
 		uintptr(SW_SHOW),
 	)
+	for _, window := range activeWindows {
+		if window.Handle == hwnd {
+			window.WindowState = "Borderless"
+			break
+		}
+	}
+}
+
+func MakeWindowed(windowTitle string) error {
+	hwnd := FindWindowByTitle(windowTitle)
+	if hwnd == 0 {
+		return fmt.Errorf("window not found: %s", windowTitle)
+	}
+
+	// Determine the monitor where this window currently resides
+	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
+	if r0 == 0 {
+		return fmt.Errorf("failed to get monitor for window")
+	}
+	monitor := r0
+
+	// Query monitor work area (or full area).
+	mi := MONITORINFO{
+		CbSize: uint32(unsafe.Sizeof(MONITORINFO{})),
+	}
+	r1, _, _ := procGetMonitorInfoW.Call(monitor, uintptr(unsafe.Pointer(&mi)))
+	if r1 == 0 {
+		return fmt.Errorf("GetMonitorInfoW failed")
+	}
+
+	x := mi.RcMonitor.Left
+	y := mi.RcMonitor.Top
+	width := mi.RcMonitor.Right - mi.RcMonitor.Left
+	height := mi.RcMonitor.Bottom - mi.RcMonitor.Top
+
+	// Get current style
+	styleIndex := int32(GWL_STYLE)
+	r2, _, _ := procGetWindowLongW.Call(hwnd, uintptr(styleIndex))
+	origStyle := r2
+
+	// Set new style: Add OVERLAPPEDWINDOW, remove POPUP
+	newStyle := (origStyle | uintptr(WS_OVERLAPPEDWINDOW)) &^ uintptr(WS_POPUP)
+
+	procSetWindowLongW.Call(hwnd, uintptr(styleIndex), newStyle)
+
+	// Position and size to the monitor rect
+	SetWindowPos(
+		hwnd,
+		0,
+		x,
+		y,
+		width,
+		height,
+		SWP_FRAMECHANGED|SWP_SHOWWINDOW,
+	)
+
+	procShowWindow.Call(hwnd, uintptr(SW_SHOW))
+
+	return nil
+}
+
+func SetFocus(hwnd uintptr) error {
+	if hwnd == 0 {
+		return fmt.Errorf("window handle is null")
+	}
+	procShowWindow.Call(hwnd, uintptr(SW_SHOWMAXIMIZED))
+
+	r2, _, _ := procBringWindowToTop.Call(hwnd)
+	if r2 == 0 {
+		return fmt.Errorf("failed to bring window to top")
+	}
+
+	r3, _, _ := procSetForegroundWindow.Call(hwnd)
+	if r3 == 0 {
+		return fmt.Errorf("failed to set foreground window")
+	}
+
+	return nil
 }
