@@ -54,16 +54,14 @@ const (
 	SWP_FRAMECHANGED       = 0x0020
 	SWP_SHOWWINDOW         = 0x0040
 	GWL_STYLE        int32 = -16
-	WS_POPUP               = 0x80000000
 
-	// Standard style bits to remove for borderless
+	WS_POPUP       = 0x80000000
 	WS_CAPTION     = 0x00C00000
 	WS_THICKFRAME  = 0x00040000
 	WS_MINIMIZEBOX = 0x00020000
 	WS_MAXIMIZEBOX = 0x00010000
 	WS_SYSMENU     = 0x00080000
 
-	// Add these constants after the existing WS_* constants
 	MONITOR_DEFAULTTONEAREST = 0x00000002
 	SW_SHOW                  = 5
 	SW_SHOWMAXIMIZED         = 3
