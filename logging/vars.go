@@ -7,9 +7,8 @@ import (
 /* Set these ones in main */
 var AppName string = "Default"
 var ExecutableName string = "Default"
-var TraceDebug bool = false
+var TraceDebug bool = true
 var ConsoleLogging bool = true
-
 
 /* Automatically Set and Optional */
 var UserProfile string
