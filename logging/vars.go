@@ -10,14 +10,10 @@ var ExecutableName string = "Default"
 var TraceDebug bool = false
 var ConsoleLogging bool = true
 
-/* Optional */
-var OPENAIApiKey string
 
 /* Automatically Set and Optional */
 var UserProfile string
 var ConfigPath string = "C:\\Local\\Config\\Default.ini"
-var CacheFrequency int64 = 12 // Minutes between cache refreshes
-var ProgramLogString string
 var TraceLogRotation int64 = 3     // Time between trace log rotation - days
 var PriorityLogRotation int64 = 14 // Time between change/error log rotation - days
 

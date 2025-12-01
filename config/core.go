@@ -10,8 +10,6 @@ import (
 	osapi "github.com/Bensterriblescripts/Lib-Handlers/osapi"
 )
 
-var CurrentConfiguration map[string]string
-
 func ReadConfig() map[string]string {
 	rawconfig := GetConfig()
 
