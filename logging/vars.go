@@ -6,13 +6,12 @@ import (
 
 /* Set these ones in main */
 var AppName string = "Default"
-var ExecutableName string = "Default"
 var TraceDebug bool = true
 var ConsoleLogging bool = true
 
 /* Automatically Set and Optional */
 var UserProfile string
-var ConfigPath string = "C:\\Local\\Config\\Default.ini"
+var ConfigPath = "C:\\Local\\Config\\Default.ini"
 var TraceLogRotation int64 = 3     // Time between trace log rotation - days
 var PriorityLogRotation int64 = 14 // Time between change/error log rotation - days
 

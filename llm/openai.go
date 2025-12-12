@@ -130,6 +130,7 @@ func handleFileUpload(path string, purpose string) string {
 
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
+	defer WrapErr(writer.Close)
 
 	if ErrExists(writer.WriteField("purpose", purpose)) {
 		ErrorLog("Error writing purpose field")
