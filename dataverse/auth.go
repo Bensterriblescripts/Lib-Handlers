@@ -58,11 +58,16 @@ func GetAccessToken() Token {
 	if resp, err := ErrorExists(http.PostForm(tokenurl, data)); err {
 		if resp.Body != nil {
 			defer WrapErr(resp.Body.Close)
+		} else {
+			ErrorLog("Response body is empty")
 		}
 		return Token{}
 	} else {
 		if resp.Body != nil {
 			defer WrapErr(resp.Body.Close)
+		} else {
+			ErrorLog("Response body is empty")
+			return Token{}
 		}
 		if NetworkDebug {
 			TraceLog("Response: " + resp.Status)
