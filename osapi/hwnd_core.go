@@ -63,15 +63,10 @@ const (
 	MONITOR_DEFAULTTONEAREST = 0x00000002
 	SW_SHOW                  = 5
 	SW_RESTORE               = 9
-	SW_SHOWMAXIMIZED         = 3
 	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
 
-	WM_HOTKEY    = 0x0312
-	MOD_ALT      = 0x0001
-	MOD_CONTROL  = 0x0002
-	MOD_SHIFT    = 0x0004
-	MOD_WIN      = 0x0008
-	MOD_NOREPEAT = 0x4000
+	WM_HOTKEY = 0x0312
+	MOD_ALT   = 0x0001
 )
 
 type Window struct {
@@ -306,7 +301,10 @@ func SetWindowWindowed(hwnd uintptr) {
 		SWP_FRAMECHANGED|SWP_SHOWWINDOW,
 	)
 
-	procShowWindow.Call(hwnd, uintptr(SW_SHOW))
+	_, _, err := procShowWindow.Call(hwnd, uintptr(SW_SHOW))
+	if err != nil && err != syscall.Errno(0) {
+		ErrorLog("SetWindowPos failed: " + err.Error())
+	}
 
 	window.WindowState = "Windowed"
 	SetVisible(hwnd)
@@ -330,7 +328,10 @@ func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from othe
 	}
 }
 func SetVisible(hwnd uintptr) { // Less aggressive than SetFocus, will open if minimised/tray
-	procShowWindow.Call(hwnd, SW_RESTORE)
+	_, _, err := procShowWindow.Call(hwnd, SW_RESTORE)
+	if err != nil && err != syscall.Errno(0) {
+		ErrorLog("SetVisible: failed to show window: " + err.Error())
+	}
 }
 func GetMessage(msg *MSG, hwnd uintptr, msgFilterMin uint32, msgFilterMax uint32) int32 {
 	r, _, _ := procGetMessageW.Call(
