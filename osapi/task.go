@@ -6,7 +6,7 @@ import (
 
 func RunExecutableAtLogonRegistry(name string, path string) {
 	out, success := Run(`
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "` + name + `" -Value "` + path + `" -PropertyType String -Force
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "` + name + `" -Value '"` + path + `"' -PropertyType String -Force
 	`)
 	if !success {
 		ErrorLog("Failed to create task: " + name)
