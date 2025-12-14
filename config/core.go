@@ -80,9 +80,12 @@ func Write(label string, value string) {
 	}
 	Current[label] = value
 
-	overwriteConfig()
+	if !overwriteConfig() {
+		ErrorLog("Failed to write the config file")
+	} else {
+		TraceLog("Wrote to the config file")
+	}
 }
-
 func WriteConfig(newConfig map[string]string) {
 	if len(newConfig) == 0 {
 		return
@@ -94,7 +97,6 @@ func WriteConfig(newConfig map[string]string) {
 
 	if !overwriteConfig() {
 		ErrorLog("Failed to write the config file")
-		return
 	} else {
 		TraceLog("Wrote to the config file")
 	}
