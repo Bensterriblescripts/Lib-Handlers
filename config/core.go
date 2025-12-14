@@ -3,12 +3,15 @@ package config
 import (
 	"bufio"
 	"bytes"
+	"maps"
 	"os"
 	"strings"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 	osapi "github.com/Bensterriblescripts/Lib-Handlers/osapi"
 )
+
+var Current map[string]string
 
 func ReadConfig() map[string]string {
 	rawconfig := GetConfig()
@@ -61,32 +64,54 @@ func GetConfig() []byte {
 		return filecontent
 	}
 }
-func OverwriteConfig(newconfigmap map[string]string) {
-	if !osapi.EnsurePath(ConfigPath) {
-		ErrorLog("Failed to create the config directory")
+
+func Write(label string, value string) {
+	if label == "" {
+		ErrorLog("Label cannot be an empty string")
 		return
 	}
-	currentconfigmap := ReadConfig()
-	for newkey, newvalue := range newconfigmap {
-		currentconfigmap[newkey] = newvalue
-	}
-
-	if len(currentconfigmap) == 0 {
+	if value == "" {
+		ErrorLog("The value passed into config.Write was empty")
 		return
 	}
 
-	if !WriteConfig(currentconfigmap) {
+	if Current == nil {
+		Current = ReadConfig()
+	}
+	Current[label] = value
+
+	overwriteConfig()
+}
+
+func WriteConfig(newConfig map[string]string) {
+	if len(newConfig) == 0 {
+		return
+	}
+	if Current == nil {
+		Current = ReadConfig()
+	}
+	maps.Copy(Current, newConfig)
+
+	if !overwriteConfig() {
 		ErrorLog("Failed to write the config file")
 		return
 	} else {
 		TraceLog("Wrote to the config file")
 	}
 }
-func WriteConfig(configmap map[string]string) bool {
+func overwriteConfig() bool {
+	if !osapi.EnsurePath(ConfigPath) {
+		ErrorLog("Failed to create the config directory")
+		return false
+	}
+	if len(Current) == 0 {
+		return false
+	}
+
 	var buffer bytes.Buffer
-	for key, value := range configmap {
+	for key, value := range Current {
 		buffer.WriteString(key + "=" + value + "\n")
-		if ErrExists(os.WriteFile(ConfigPath, buffer.Bytes(), 0644)) {
+		if ErrExists(os.WriteFile(ConfigPath, buffer.Bytes(), 0644)) { // Truncates the file before writing
 			ErrorLog("Failed to write the config file")
 			return false
 		}
