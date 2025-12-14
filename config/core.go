@@ -14,7 +14,7 @@ import (
 var Current map[string]string
 
 func ReadConfig() map[string]string {
-	rawconfig := GetConfig()
+	rawconfig := getConfig()
 
 	out := make(map[string]string)
 	s := bufio.NewScanner(bytes.NewReader(rawconfig))
@@ -36,7 +36,7 @@ func ReadConfig() map[string]string {
 	}
 	return out
 }
-func GetConfig() []byte {
+func getConfig() []byte {
 	if !osapi.EnsurePath(ConfigPath) {
 		ErrorLog("Failed to retrieve the config during directory creation")
 		return []byte{}
@@ -65,7 +65,14 @@ func GetConfig() []byte {
 	}
 }
 
-func Write(label string, value string) {
+func Write() { // Write config.Current to the file
+	if !overwriteConfig() {
+		ErrorLog("Failed to write the config file")
+	} else {
+		TraceLog("Wrote to the config file")
+	}
+}
+func WriteSetting(label string, value string) { // Write single setting
 	if label == "" {
 		ErrorLog("Label cannot be an empty string")
 		return
@@ -86,7 +93,7 @@ func Write(label string, value string) {
 		TraceLog("Wrote to the config file")
 	}
 }
-func WriteConfig(newConfig map[string]string) {
+func WriteSettings(newConfig map[string]string) { // Write multiple settings
 	if len(newConfig) == 0 {
 		return
 	}
