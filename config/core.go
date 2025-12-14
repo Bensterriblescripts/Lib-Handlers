@@ -12,6 +12,7 @@ import (
 )
 
 var Current map[string]string
+var Draft map[string]string
 
 func ReadConfig() map[string]string {
 	rawconfig := getConfig()
