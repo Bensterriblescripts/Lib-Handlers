@@ -11,10 +11,14 @@ import (
 	osapi "github.com/Bensterriblescripts/Lib-Handlers/osapi"
 )
 
+var ConfigPath string
 var Current map[string]string
 var Draft map[string]string
 
 func ReadConfig() map[string]string {
+	if ConfigPath == "" {
+		ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
+	}
 	rawconfig := getConfig()
 
 	out := make(map[string]string)
