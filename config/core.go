@@ -35,6 +35,7 @@ func ReadConfig() map[string]string {
 		}
 		out[k] = v
 	}
+	Current = out
 	return out
 }
 func getConfig() []byte {
