@@ -85,10 +85,9 @@ func WriteSetting(label string, value string) { // Write single setting
 	}
 
 	if Current == nil {
-		Current = ReadConfig()
+		_ = ReadConfig()
 	}
 	Current[label] = value
-
 	if !overwriteConfig() {
 		ErrorLog("Failed to write the config file")
 	} else {
@@ -100,7 +99,7 @@ func WriteSettings(newConfig map[string]string) { // Write multiple settings
 		return
 	}
 	if Current == nil {
-		Current = ReadConfig()
+		_ = ReadConfig()
 	}
 	maps.Copy(Current, newConfig)
 
