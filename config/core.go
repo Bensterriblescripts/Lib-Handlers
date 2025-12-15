@@ -16,9 +16,6 @@ var Current map[string]string
 var Draft map[string]string
 
 func ReadConfig() map[string]string {
-	if ConfigPath == "" {
-		ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
-	}
 	rawconfig := getConfig()
 
 	out := make(map[string]string)
@@ -43,6 +40,9 @@ func ReadConfig() map[string]string {
 	return out
 }
 func getConfig() []byte {
+	if ConfigPath == "" {
+		ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
+	}
 	if !osapi.EnsurePath(ConfigPath) {
 		ErrorLog("Failed to retrieve the config during directory creation")
 		return []byte{}
