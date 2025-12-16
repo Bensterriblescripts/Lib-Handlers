@@ -4,14 +4,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
 func Run(command string) (string, bool) {
-	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // No powershell window
+	cmd := exec.Command("bash", "-c", command)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
