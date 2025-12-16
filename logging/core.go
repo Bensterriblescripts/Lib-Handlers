@@ -25,7 +25,7 @@ func InitVars() {
 		BaseLogsFolder = "C:\\Local\\Logs\\" + AppName + "\\"
 	} else {
 		UserProfile = PanicError(os.UserHomeDir())
-		BaseLogsFolder = UserProfile + "/logs/" + AppName
+		BaseLogsFolder = UserProfile + "/logs/" + AppName + "/"
 	}
 }
 func InitLogs() {
