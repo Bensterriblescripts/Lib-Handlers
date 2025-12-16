@@ -16,6 +16,18 @@ var errorLogWriter io.Writer
 var changeLogWriter io.Writer
 var traceLogWriter io.Writer
 
+func InitVars() {
+	if runtime.GOOS == "windows" {
+		UserProfile = os.Getenv("USERPROFILE")
+		if UserProfile == "" {
+			Panic("Unable to locate the user's profile name.")
+		}
+		BaseLogsFolder = "C:\\Local\\Logs\\" + AppName + "\\"
+	} else {
+		UserProfile = PanicError(os.UserHomeDir())
+		BaseLogsFolder = UserProfile + "/logs/" + AppName
+	}
+}
 func InitLogs() {
 	InitVars()
 
@@ -29,18 +41,6 @@ func InitLogs() {
 			time.Sleep(time.Duration(TraceLogRotation) * time.Minute)
 		}
 	}()
-}
-func InitVars() {
-	if runtime.GOOS == "windows" {
-		UserProfile = os.Getenv("USERPROFILE")
-		if UserProfile == "" {
-			Panic("Unable to locate the user's profile name.")
-		}
-		BaseLogsFolder = "C:\\Local\\Logs\\" + AppName + "\\"
-	} else {
-		UserProfile = PanicError(os.UserHomeDir())
-		BaseLogsFolder = UserProfile + "/logs/" + AppName
-	}
 }
 func InitErrorLog(filename string) {
 	ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
