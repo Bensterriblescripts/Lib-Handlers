@@ -28,11 +28,19 @@ func Request(table string, params string) []byte {
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
+			if resp.Body != nil {
+				defer WrapErr(resp.Body.Close)
+			} else {
+				ErrorLog("Response body is empty")
+			}
 			ErrorLog("CRM Request Failed: " + url)
 			return nil
 		} else {
-			defer resp.Body.Close()
-
+			if resp.Body == nil {
+				ErrorLog("Response body is empty")
+				return nil
+			}
+			defer WrapErr(resp.Body.Close)
 			if NetworkDebug {
 				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))
 				TraceLog("----------")
@@ -76,10 +84,19 @@ func Create(table string, data []byte) []byte {
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
+			if resp.Body != nil {
+				defer WrapErr(resp.Body.Close)
+			} else {
+				ErrorLog("Response body is empty")
+			}
 			ErrorLog("CRM Request Failed: " + url)
 			return nil
 		} else {
-			defer resp.Body.Close()
+			if resp.Body == nil {
+				ErrorLog("Response body is empty")
+				return nil
+			}
+			defer WrapErr(resp.Body.Close)
 
 			if NetworkDebug {
 				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))

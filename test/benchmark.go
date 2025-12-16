@@ -32,3 +32,15 @@ func BenchmarkFunctions(function1 func(), function2 func(), iterations int) {
 		durationFunction2.Seconds(), function2Milli,
 	))
 }
+func BenchmarkFunction(function func(), iterations int) {
+	startFunction := time.Now()
+	for x := 0; x < iterations; x++ {
+		function()
+	}
+	durationFunction := time.Since(startFunction)
+	function1Milli := float64(durationFunction.Milliseconds()) / float64(iterations)
+	TraceLog(fmt.Sprintf(
+		"Benchmark || Function 1 || Total time taken %fs, Call Duration: %fms",
+		durationFunction.Seconds(), function1Milli,
+	))
+}

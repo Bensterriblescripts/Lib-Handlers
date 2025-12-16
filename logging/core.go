@@ -31,7 +31,6 @@ func InitLogs() {
 	}()
 }
 func InitVars() {
-	ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
 	if runtime.GOOS == "windows" {
 		UserProfile = os.Getenv("USERPROFILE")
 		if UserProfile == "" {

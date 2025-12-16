@@ -55,22 +55,38 @@ func GetAccessToken() Token {
 		TraceLog("Sending request to: " + tokenurl)
 		TraceLog("Data: " + data.Encode())
 	}
-	resp := PanicError(http.PostForm(tokenurl, data))
-	if NetworkDebug {
-		TraceLog("Response: " + resp.Status)
-		TraceLog("Response Headers:")
-		for key, value := range resp.Header {
-			TraceLog(fmt.Sprintf("%s: %s", key, value))
+	if resp, err := ErrorExists(http.PostForm(tokenurl, data)); err {
+		if resp.Body != nil {
+			defer WrapErr(resp.Body.Close)
+		} else {
+			ErrorLog("Response body is empty")
 		}
-	}
-
-	defer WrapErr(resp.Body.Close)
-	body := PanicError(io.ReadAll(resp.Body))
-	if ErrExists(json.Unmarshal(body, &token)) {
-		ErrorLog("Failed to deserialize response " + string(body))
 		return Token{}
 	} else {
-		TraceLog("Retrieved Azure access token")
-		return token
+		if resp.Body != nil {
+			defer WrapErr(resp.Body.Close)
+		} else {
+			ErrorLog("Response body is empty")
+			return Token{}
+		}
+		if NetworkDebug {
+			TraceLog("Response: " + resp.Status)
+			TraceLog("Response Headers:")
+			for key, value := range resp.Header {
+				TraceLog(fmt.Sprintf("%s: %s", key, value))
+			}
+		}
+
+		if body, err := ErrorExists(io.ReadAll(resp.Body)); err {
+			ErrorLog("Failed to read response body")
+			return Token{}
+		} else {
+			if ErrExists(json.Unmarshal(body, &token)) {
+				ErrorLog("Failed to deserialize response " + string(body))
+				return Token{}
+			}
+			TraceLog("Retrieved Azure access token")
+			return token
+		}
 	}
 }

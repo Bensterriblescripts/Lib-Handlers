@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"bytes"
+	"maps"
 	"os"
 	"strings"
 
@@ -10,8 +11,12 @@ import (
 	osapi "github.com/Bensterriblescripts/Lib-Handlers/osapi"
 )
 
+var ConfigPath string
+var Current map[string]string
+var Draft map[string]string
+
 func ReadConfig() map[string]string {
-	rawconfig := GetConfig()
+	rawconfig := getConfig()
 
 	out := make(map[string]string)
 	s := bufio.NewScanner(bytes.NewReader(rawconfig))
@@ -31,9 +36,13 @@ func ReadConfig() map[string]string {
 		}
 		out[k] = v
 	}
+	Current = out
 	return out
 }
-func GetConfig() []byte {
+func getConfig() []byte {
+	if ConfigPath == "" {
+		ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
+	}
 	if !osapi.EnsurePath(ConfigPath) {
 		ErrorLog("Failed to retrieve the config during directory creation")
 		return []byte{}
@@ -61,32 +70,62 @@ func GetConfig() []byte {
 		return filecontent
 	}
 }
-func OverwriteConfig(newconfigmap map[string]string) {
-	if !osapi.EnsurePath(ConfigPath) {
-		ErrorLog("Failed to create the config directory")
-		return
-	}
-	currentconfigmap := ReadConfig()
-	for newkey, newvalue := range newconfigmap {
-		currentconfigmap[newkey] = newvalue
-	}
 
-	if len(currentconfigmap) == 0 {
-		return
-	}
-
-	if !WriteConfig(currentconfigmap) {
+func Write() { // Write config.Current to the file
+	if !overwriteConfig() {
 		ErrorLog("Failed to write the config file")
-		return
 	} else {
 		TraceLog("Wrote to the config file")
 	}
 }
-func WriteConfig(configmap map[string]string) bool {
+func WriteSetting(label string, value string) { // Write single setting
+	if label == "" {
+		ErrorLog("Label cannot be an empty string")
+		return
+	}
+	if value == "" {
+		ErrorLog("The value passed into config.Write was empty")
+		return
+	}
+
+	if Current == nil {
+		_ = ReadConfig()
+	}
+	Current[label] = value
+	if !overwriteConfig() {
+		ErrorLog("Failed to write the config file")
+	} else {
+		TraceLog("Wrote to the config file")
+	}
+}
+func WriteSettings(newConfig map[string]string) { // Write multiple settings
+	if len(newConfig) == 0 {
+		return
+	}
+	if Current == nil {
+		_ = ReadConfig()
+	}
+	maps.Copy(Current, newConfig)
+
+	if !overwriteConfig() {
+		ErrorLog("Failed to write the config file")
+	} else {
+		TraceLog("Wrote to the config file")
+	}
+}
+func overwriteConfig() bool {
+	if !osapi.EnsurePath(ConfigPath) {
+		ErrorLog("Failed to create the config directory")
+		return false
+	}
+	if len(Current) == 0 {
+		return false
+	}
+
 	var buffer bytes.Buffer
-	for key, value := range configmap {
+	for key, value := range Current {
 		buffer.WriteString(key + "=" + value + "\n")
-		if ErrExists(os.WriteFile(ConfigPath, buffer.Bytes(), 0644)) {
+		if ErrExists(os.WriteFile(ConfigPath, buffer.Bytes(), 0644)) { // Truncates the file before writing
 			ErrorLog("Failed to write the config file")
 			return false
 		}
