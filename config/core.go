@@ -15,6 +15,7 @@ var ConfigPath string
 var Current map[string]string
 var Draft map[string]string
 
+// Read the config file stored in config.ConfigPath
 func ReadConfig() map[string]string {
 	rawconfig := getConfig()
 
@@ -71,14 +72,17 @@ func getConfig() []byte {
 	}
 }
 
-func Write() { // Write config.Current to the file
+// Write config.Current to the file
+func Write() {
 	if !overwriteConfig() {
 		ErrorLog("Failed to write the config file")
 	} else {
 		TraceLog("Wrote to the config file")
 	}
 }
-func WriteSetting(label string, value string) { // Write single setting
+
+// Write a single setting to the config file
+func WriteSetting(label string, value string) {
 	if label == "" {
 		ErrorLog("Label cannot be an empty string")
 		return
@@ -98,7 +102,9 @@ func WriteSetting(label string, value string) { // Write single setting
 		TraceLog("Wrote " + label + " to the config file")
 	}
 }
-func WriteSettings(newConfig map[string]string) { // Write multiple settings
+
+// Write a map of settings to the config file (strings only)
+func WriteSettings(newConfig map[string]string) {
 	if len(newConfig) == 0 {
 		return
 	}

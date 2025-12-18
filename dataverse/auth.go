@@ -27,21 +27,35 @@ var Endpoint string
 
 var CurrentAccessToken Token
 
-func Authenticate() Token { // Should be run on a cache timer or on low demand requests
+// Authenticate with the Azure and retrieve a new access token
+//
+// Requires the following variables to be set:
+//
+// - dataverse.ClientID (guid.Guid)
+//
+// - dataverse.ClientSecret (string)
+//
+// - dataverse.TenantID (guid.Guid)
+//
+// - dataverse.Endpoint (string)
+//
+// - dataverse.NetworkDebug (Bool, Verbose Logging)
+//
+// Returns the current access token, as well as storing it in dataverse.CurrentAccessToken
+func Authenticate() Token {
 	TraceLog("Authenticating...")
 
-	newtoken := GetAccessToken()
+	newtoken := getAccessToken()
 	if newtoken == (Token{}) {
 		ErrorLog("Failed to get access token")
 		return newtoken
-	} else if newtoken != (Token{}) {
+	} else {
 		TraceLog("Retrieved new access token")
 		CurrentAccessToken = newtoken
-		return newtoken
+		return CurrentAccessToken
 	}
-	return CurrentAccessToken
 }
-func GetAccessToken() Token {
+func getAccessToken() Token {
 	var token Token
 	tokenurl := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", TenantID.String)
 	data := url.Values{

@@ -16,8 +16,23 @@ var errorLogWriter io.Writer
 var changeLogWriter io.Writer
 var traceLogWriter io.Writer
 
+// Initialize all logging files and variables
+//
+// # The following must be set before calling:
+//
+// - logging.AppName (string)
+//
+// - logging.LoggingPath (string) (default: C:\Local\Logs\AppName\ or /home/*user*/local/Logs/AppName/)
+//
+// - logging.TraceDebug (bool) (default: true)
+//
+// - logging.ConsoleLogging (bool) (default: true)
+//
+// - logging.TraceLogRotation (int64 - days) (default: 3)
+//
+// - logging.PriorityLogRotation (int64 - days) (default: 14)
 func InitLogs() {
-	InitVars()
+	initVars()
 
 	if _, err := os.Stat(BaseLogsFolder); os.IsNotExist(err) {
 		PanicErr(os.MkdirAll(BaseLogsFolder, 0755))
@@ -30,45 +45,86 @@ func InitLogs() {
 		}
 	}()
 }
-func InitVars() {
-	if runtime.GOOS == "windows" {
-		UserProfile = os.Getenv("USERPROFILE")
-		if UserProfile == "" {
-			Panic("Unable to locate the user's profile name.")
+func initVars() {
+	if LoggingPath != "" {
+		if runtime.GOOS == "windows" {
+			BaseLogsFolder = LoggingPath + "\\"
+		} else {
+			BaseLogsFolder = LoggingPath + "/"
 		}
-		BaseLogsFolder = "C:\\Local\\Logs\\" + AppName + "\\"
 	} else {
-		UserProfile = PanicError(os.UserHomeDir())
-		BaseLogsFolder = UserProfile + "/local/Logs/" + AppName + "/"
+		if runtime.GOOS == "windows" {
+			UserProfile = os.Getenv("USERPROFILE")
+			if UserProfile == "" {
+				Panic("Unable to locate the user's profile name.")
+			}
+			BaseLogsFolder = "C:\\Local\\Logs\\" + AppName + "\\"
+		} else {
+			UserProfile = PanicError(os.UserHomeDir())
+			BaseLogsFolder = UserProfile + "/local/Logs/" + AppName + "/"
+		}
 	}
 }
+
+// Initialize the error log file, the file will be closed and reopened if it already exists
+//
+// Sets ErrorLogFile
 func InitErrorLog(filename string) {
-	ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	if ErrorLogFile == nil {
+		ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	} else {
+		ErrorLogFile.Close()
+		ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	}
 	if ConsoleLogging {
 		errorLogWriter = io.MultiWriter(os.Stdout, ErrorLogFile)
 	} else {
 		errorLogWriter = ErrorLogFile
 	}
 }
+
+// Initialize the change log file, the file will be closed and reopened if it already exists
+//
+// Sets ChangeLogFile
 func InitChangeLog(filename string) {
-	ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	if ChangeLogFile == nil {
+		ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	} else {
+		ChangeLogFile.Close()
+		ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	}
+
 	if ConsoleLogging {
 		changeLogWriter = io.MultiWriter(os.Stdout, ChangeLogFile)
 	} else {
 		changeLogWriter = ChangeLogFile
 	}
 }
+
+// Initialize the trace log file, the trace log will not be written to if TraceDebug is manually set to false
+//
+// Sets TraceLogFile
 func InitTraceLog(filename string) {
 	if !TraceDebug {
 		return
 	}
-	TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	if TraceLogFile == nil {
+		TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	} else {
+		TraceLogFile.Close()
+		TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
+	}
+
 	if ConsoleLogging {
 		traceLogWriter = io.MultiWriter(os.Stdout, TraceLogFile)
 	} else {
 		traceLogWriter = TraceLogFile
 	}
 }
+
+// Alter the current log folder path
+//
+// The new logs folder will sit under AppName/StringPassedIn
 func SetLogsFolder(foldername string) {
 	currentday := GetDay()
 
@@ -107,6 +163,7 @@ func SetLogsFolder(foldername string) {
 	}
 }
 
+// Write to the error log and stdout if ConsoleLogging is set to true
 func ErrorLog(message string) {
 	if ErrorLogFile == nil {
 		currentday := GetDay()
@@ -119,6 +176,8 @@ func ErrorLog(message string) {
 	message = RetrieveLatestCaller(message)
 	PrintLogs(message, 0)
 }
+
+// Write to the change log and stdout if ConsoleLogging is set to true
 func ChangeLog(message string, idnumber string) {
 	if ChangeLogFile == nil {
 		currentday := GetDay()
@@ -134,6 +193,8 @@ func ChangeLog(message string, idnumber string) {
 	}
 	PrintLogs(message, 1)
 }
+
+// Write to the trace log and stdout if ConsoleLogging is set to true
 func TraceLog(message string) {
 	if !TraceDebug {
 		return
@@ -182,10 +243,18 @@ func PrintLogs(message string, errorlevel int) {
 		PanicError(fmt.Fprintln(traceLogWriter, message))
 	}
 }
+
+// Rotate the logs in the folder, removes logs older than the rotation time set in TraceLogRotation and PriorityLogRotation
+//
+// Example Usage:
+//
+//	go func() {
+//		for {
+//			RotateLogs(BaseLogsFolder) // Immediately rotate - Change the folder path for subfolder rotation
+//			time.Sleep(time.Duration(TraceLogRotation) * time.Day) // Wait for the next rotation in long running apps
+//		}
+//	}()
 func RotateLogs(logFolder string) {
-	if TraceDebug {
-		return
-	}
 	files, err := os.ReadDir(logFolder)
 	if err != nil || len(files) == 0 {
 		return

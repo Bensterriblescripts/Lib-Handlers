@@ -10,6 +10,11 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
+// Requires an existing access token in dataverse.CurrentAccessToken
+//
+// - Use dataverse.Authenticate() to retrieve a new token
+//
+// Usage: dataverse.Request("contacts", "contactid eq 1234567890")
 func Request(table string, params string) []byte {
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 	if params != "" {
@@ -28,19 +33,11 @@ func Request(table string, params string) []byte {
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
-			if resp.Body != nil {
-				defer WrapErr(resp.Body.Close)
-			} else {
-				ErrorLog("Response body is empty")
-			}
 			ErrorLog("CRM Request Failed: " + url)
 			return nil
 		} else {
-			if resp.Body == nil {
-				ErrorLog("Response body is empty")
-				return nil
-			}
-			defer WrapErr(resp.Body.Close)
+			defer resp.Body.Close()
+
 			if NetworkDebug {
 				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))
 				TraceLog("----------")
@@ -69,6 +66,17 @@ func Request(table string, params string) []byte {
 		}
 	}
 }
+
+// Add a record into an existing table.
+//
+// Data should be a marshalled JSON object. E.g.
+//
+//	type Change struct {
+//			Datestring   string `json:"cr244_datestring"`
+//			Author       string `json:"cr244_author"`
+//	}
+//
+// dataverse.Create("contacts", data)
 func Create(table string, data []byte) []byte {
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 
@@ -84,19 +92,10 @@ func Create(table string, data []byte) []byte {
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
-			if resp.Body != nil {
-				defer WrapErr(resp.Body.Close)
-			} else {
-				ErrorLog("Response body is empty")
-			}
 			ErrorLog("CRM Request Failed: " + url)
 			return nil
 		} else {
-			if resp.Body == nil {
-				ErrorLog("Response body is empty")
-				return nil
-			}
-			defer WrapErr(resp.Body.Close)
+			defer resp.Body.Close()
 
 			if NetworkDebug {
 				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))

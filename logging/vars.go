@@ -8,6 +8,7 @@ import (
 var AppName string = "Default"
 var TraceDebug bool = true
 var ConsoleLogging bool = true
+var LoggingPath string = ""
 
 /* Automatically Set and Optional */
 var UserProfile string
