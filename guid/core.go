@@ -37,16 +37,7 @@ func Empty() Guid {
 		false,
 	}
 }
-func Matches(val Guid, otherval Guid) bool {
-	if !val.Valid {
-		return false
-	} else if !otherval.Valid {
-		return false
-	}
-
-	return strings.EqualFold(val.String, otherval.String)
-}
-func MatchesString(val Guid, otherval string) bool {
+func Matches(val Guid, otherval string) bool {
 	if !val.Valid {
 		ErrorLog("First parameter passed into guid.MatchesString is invalid " + val.String)
 		return false
