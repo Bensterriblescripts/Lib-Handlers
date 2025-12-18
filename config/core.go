@@ -95,7 +95,7 @@ func WriteSetting(label string, value string) { // Write single setting
 	if !overwriteConfig() {
 		ErrorLog("Failed to write the config file")
 	} else {
-		TraceLog("Wrote to the config file")
+		TraceLog("Wrote " + label + " to the config file")
 	}
 }
 func WriteSettings(newConfig map[string]string) { // Write multiple settings
