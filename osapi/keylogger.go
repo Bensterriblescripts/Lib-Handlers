@@ -2,15 +2,17 @@ package osapi
 
 import (
 	"runtime"
+	"strconv"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
 var LogKeys = true
 var Hotkeys []Hotkey
+var currentHotkeyID int32 = 0
 
 type Hotkey struct {
-	ID  uintptr
+	ID  int32
 	Mod string
 	Key string
 }
@@ -89,12 +91,25 @@ func StartKeylogger() {
 			ErrorLog("No hotkeys registered, add them to osapi.Hotkeys.\nE.g. osapi.Hotkeys = append(osapi.Hotkeys, osapi.Hotkey{ID: 1, Mod: \"alt\", Key: \"f1\"})")
 			return
 		}
-		for _, hotkey := range Hotkeys {
-			if !registerHotKey(0, hotkey.ID, Modifiers[hotkey.Mod], Keys[hotkey.Key]) {
+
+		for hotkeyIndex, hotkey := range Hotkeys {
+			Hotkeys[hotkeyIndex].ID = currentHotkeyID
+			currentHotkeyID++
+			if _, ok := Keys[hotkey.Key]; !ok {
+				ErrorLog("Invalid key: " + hotkey.Key)
+				return
+			}
+			if _, ok := Modifiers[hotkey.Mod]; !ok {
+				ErrorLog("Invalid modifier: " + hotkey.Mod)
+				return
+			}
+
+			if !registerHotKey(0, uintptr(Hotkeys[hotkeyIndex].ID), Modifiers[hotkey.Mod], Keys[hotkey.Key]) {
 				ErrorLog("Failed to register hotkey: " + hotkey.Mod + "+" + hotkey.Key)
 				return
 			}
-			defer unregisterHotKey(0, hotkey.ID)
+			defer unregisterHotKey(0, uintptr(Hotkeys[hotkeyIndex].ID))
+			TraceLog("Registered hotkey: " + hotkey.Mod + " + " + hotkey.Key + " with ID: " + strconv.Itoa(int(Hotkeys[hotkeyIndex].ID)))
 		}
 
 		for LogKeys {
@@ -103,9 +118,11 @@ func StartKeylogger() {
 			if r <= 0 {
 				break
 			}
-			for _, hotkey := range Hotkeys {
-				if msg.WParam == hotkey.ID {
-					TraceLog("Hotkey Pressed: " + hotkey.Mod + " + " + hotkey.Key)
+			if msg.Message == 0x0312 {
+				for _, hotkey := range Hotkeys {
+					if msg.WParam == uintptr(hotkey.ID) {
+						TraceLog("Hotkey Pressed: " + hotkey.Mod + " + " + hotkey.Key)
+					}
 				}
 			}
 		}

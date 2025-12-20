@@ -26,6 +26,7 @@ var (
 	procGetWindowRect       = user32.NewProc("GetWindowRect")
 
 	procMonitorFromWindow = user32.NewProc("MonitorFromWindow")
+	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
 	procShowWindow        = user32.NewProc("ShowWindow")
 
 	procGetWindowThreadProcessId   = user32.NewProc("GetWindowThreadProcessId")
@@ -61,14 +62,9 @@ const (
 
 	MONITOR_DEFAULTTONEAREST = 0x00000002
 	SW_SHOW                  = 5
-	SW_MINIMIZE              = 6
 	SW_RESTORE               = 9
 	SW_SHOWMAXIMIZED         = 3
 	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
-	WS_MINIMIZED             = 0x20000000
-
-	WM_HOTKEY    = 0x0312
-	MOD_NOREPEAT = 0x4000
 )
 
 type Window struct {
@@ -93,6 +89,7 @@ type MONITORINFO struct {
 	RcWork    RECT
 	DwFlags   uint32
 }
+
 type MSG struct {
 	Hwnd     uintptr
 	Message  uint32
@@ -102,6 +99,7 @@ type MSG struct {
 	Pt       POINT
 	LPrivate uint32
 }
+
 type POINT struct {
 	X int32
 	Y int32
@@ -163,6 +161,7 @@ func GetAllActiveWindows() []Window {
 		return nil
 	}
 
+	TraceLog(fmt.Sprintf("GetAllActiveWindows finished, found %d windows", len(activeWindows)))
 	return activeWindows
 }
 func GetScreenSize() (width, height int32) {
@@ -304,33 +303,6 @@ func SetWindowWindowed(hwnd uintptr) {
 
 	window.WindowState = "Windowed"
 	SetVisible(hwnd)
-}
-func SetMinimised(hwnd uintptr) {
-	var window Window
-	for _, activeWindow := range activeWindows {
-		if activeWindow.Handle == hwnd {
-			window = activeWindow
-			break
-		}
-	}
-	if window.Handle == 0 {
-		TraceLog("Window not found, refreshing active windows...")
-		GetAllActiveWindows()
-		for _, activeWindow := range activeWindows {
-			if activeWindow.Handle == hwnd {
-				window = activeWindow
-				break
-			}
-		}
-		if window.Handle == 0 {
-			ErrorLog("Tried to edit a handle that no longer exists")
-			return
-		}
-	}
-
-	procShowWindow.Call(hwnd, uintptr(SW_MINIMIZE))
-
-	window.WindowState = "Minimised"
 }
 func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from other windows
 	if hwnd == 0 {
