@@ -86,7 +86,7 @@ func StartKeylogger() {
 		defer runtime.UnlockOSThread()
 
 		if len(Hotkeys) == 0 {
-			ErrorLog("No hotkeys registered")
+			ErrorLog("No hotkeys registered, add them to osapi.Hotkeys.\nE.g. osapi.Hotkeys = append(osapi.Hotkeys, osapi.Hotkey{ID: 1, Mod: \"alt\", Key: \"f1\"})")
 			return
 		}
 		for _, hotkey := range Hotkeys {
