@@ -85,19 +85,10 @@ func StartKeylogger() {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
 
-		Hotkeys = append(Hotkeys,
-			Hotkey{ID: 1, Mod: "alt", Key: "f1"},
-			Hotkey{ID: 2, Mod: "control", Key: "f2"},
-			Hotkey{ID: 3, Mod: "shift", Key: "f3"},
-			Hotkey{ID: 4, Mod: "win", Key: "f4"},
-		)
-
-		Hotkeys = append(Hotkeys, Hotkey{ID: 1, Mod: "alt", Key: "f1"})
-		Hotkeys = append(Hotkeys, Hotkey{ID: 2, Mod: "control", Key: "f2"})
-		Hotkeys = append(Hotkeys, Hotkey{ID: 3, Mod: "shift", Key: "f3"})
-		Hotkeys = append(Hotkeys, Hotkey{ID: 4, Mod: "win", Key: "f4"})
-
-		Hotkeys = append(Hotkeys, Hotkey{ID: 1, Mod: "alt", Key: "f1"})
+		if len(Hotkeys) == 0 {
+			ErrorLog("No hotkeys registered")
+			return
+		}
 		for _, hotkey := range Hotkeys {
 			if !registerHotKey(0, hotkey.ID, Modifiers[hotkey.Mod], Keys[hotkey.Key]) {
 				ErrorLog("Failed to register hotkey: " + hotkey.Mod + "+" + hotkey.Key)
