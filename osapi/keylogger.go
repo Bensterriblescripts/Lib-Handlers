@@ -82,7 +82,7 @@ var Modifiers = map[string]uintptr{
 //	Hotkey{ID: 2, Mod: "control", Key: "f2"},
 //	Hotkey{ID: 3, Mod: "shift", Key: "f3"},
 //	Hotkey{ID: 4, Mod: "win", Key: "f4"},
-func StartKeylogger() {
+func StartKeylogger(paramfunc func()) {
 	go func() {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
@@ -122,6 +122,7 @@ func StartKeylogger() {
 				for _, hotkey := range Hotkeys {
 					if msg.WParam == uintptr(hotkey.ID) {
 						TraceLog("Hotkey Pressed: " + hotkey.Mod + " + " + hotkey.Key)
+						paramfunc()
 					}
 				}
 			}
