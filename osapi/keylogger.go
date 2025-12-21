@@ -12,9 +12,10 @@ var Hotkeys []Hotkey
 var currentHotkeyID int32 = 0
 
 type Hotkey struct {
-	ID  int32
-	Mod string
-	Key string
+	ID       int32
+	Mod      string
+	Key      string
+	Callback func()
 }
 
 var Keys = map[string]uintptr{
@@ -82,7 +83,7 @@ var Modifiers = map[string]uintptr{
 //	Hotkey{ID: 2, Mod: "control", Key: "f2"},
 //	Hotkey{ID: 3, Mod: "shift", Key: "f3"},
 //	Hotkey{ID: 4, Mod: "win", Key: "f4"},
-func StartKeylogger(paramfunc func()) {
+func StartKeylogger() {
 	go func() {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
@@ -122,7 +123,7 @@ func StartKeylogger(paramfunc func()) {
 				for _, hotkey := range Hotkeys {
 					if msg.WParam == uintptr(hotkey.ID) {
 						TraceLog("Hotkey Pressed: " + hotkey.Mod + " + " + hotkey.Key)
-						paramfunc()
+						hotkey.Callback()
 					}
 				}
 			}
