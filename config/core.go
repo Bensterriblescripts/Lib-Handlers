@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"maps"
 	"os"
+	"runtime"
 	"strings"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -42,7 +43,11 @@ func ReadConfig() map[string]string {
 }
 func getConfig() []byte {
 	if ConfigPath == "" {
-		ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
+		if runtime.GOOS == "windows" {
+			ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
+		} else {
+			ConfigPath = "/var/log/" + AppName + ".log"
+		}
 	}
 	if !osapi.EnsurePath(ConfigPath) {
 		ErrorLog("Failed to retrieve the config during directory creation")
