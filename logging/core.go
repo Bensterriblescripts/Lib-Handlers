@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ func InitLogs() {
 	}
 	go func() {
 		for {
-			time.Sleep(30 * time.Second)
+			// time.Sleep(30 * time.Second)
 			RotateLogs(BaseLogsFolder)
 			time.Sleep(time.Duration(TraceLogRotation) * time.Minute)
 		}
@@ -265,33 +266,61 @@ func RotateLogs(logFolder string) {
 				continue
 			}
 
-			logtype := strings.Split(file.Name(), "-")[0]
-			cleandate := strings.ReplaceAll(file.Name(), logtype+"-", "")
-			cleandate = strings.ReplaceAll(cleandate, ".log", "")
+			logSplit := strings.Split(file.Name(), "-")
+			logType := logSplit[0]
+			logYear := logSplit[1]
+			logMonth := logSplit[2]
+			logDay := logSplit[3]
+			fullPath := filepath.Join(logFolder, file.Name())
 
-			switch logtype {
+			switch logType {
 			case "trace":
-				if LogOutdated(cleandate, int64(TraceLogRotation)) {
-					ClearOutdatedLogs(filepath.Join(logFolder, file.Name()))
-				}
+				ClearOutdatedLogs(fullPath, logYear, logMonth, logDay, int(TraceLogRotation))
 			case "changes", "errors":
-				if LogOutdated(cleandate, int64(PriorityLogRotation)) {
-					ClearOutdatedLogs(filepath.Join(logFolder, file.Name()))
-				}
+				ClearOutdatedLogs(fullPath, logYear, logMonth, logDay, int(PriorityLogRotation))
 			default:
-				ErrorLog("Unknown log type: " + logtype)
+				ErrorLog("Unknown log type: " + logType)
 			}
 		}
 	}
 }
-func LogOutdated(filedate string, daysToKeep int64) bool {
-	if filedateint, err := ErrorExists(time.Parse("2006-1-2", filedate)); !err {
-		filedateunix := filedateint.Unix()
-		return filedateunix < GetUnixTime()-daysToKeep
+func ClearOutdatedLogs(fullPath string, logStringYear string, logStringMonth string, logStringDay string, daysToKeep int) {
+	if logStringYear == "" {
+		ErrorLog("Log file error, year is empty: " + fullPath)
 	}
-	return true
+	if logStringMonth == "" {
+		ErrorLog("Log file error, month is empty: " + fullPath)
+	}
+	if logStringDay == "" {
+		ErrorLog("Log file error, day is empty: " + fullPath)
+	}
+	logDay, err := ErrorExists(strconv.Atoi(logStringDay))
+	if err {
+		ErrorLog("Log file error, day is not a number: " + fullPath)
+	}
+	logMonth, err := ErrorExists(strconv.Atoi(logStringMonth))
+	if err {
+		ErrorLog("Log file error, month is not a number: " + fullPath)
+	}
+	logYear, err := ErrorExists(strconv.Atoi(logStringYear))
+	if err {
+		ErrorLog("Log file error, year is not a number: " + fullPath)
+	}
+
+	currentDateArray := GetDateArray()
+	currentDay := currentDateArray[0]
+	currentMonth := currentDateArray[1]
+	currentYear := currentDateArray[2]
+
+	if logDay > daysToKeep { // If our days don't go back to the previous month
+		if logYear != currentYear || logMonth != currentMonth {
+			RemoveLog(fullPath)
+		}
+		if logDay < currentDay {
+			RemoveLog(fullPath)
+		}
+	}
 }
-func ClearOutdatedLogs(file string) {
-	TraceLog("Clearing outdated log file: " + file)
-	PrintErr(os.Remove(file))
+func RemoveLog(fullPath string) {
+	PrintErr(os.Remove(fullPath))
 }
