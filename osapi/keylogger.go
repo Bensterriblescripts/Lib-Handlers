@@ -141,8 +141,6 @@ func StartKeylogger() {
 		}
 	}()
 }
-
-// Unregister all keys
 func StopKeylogger() {
 	for _, hotkey := range Hotkeys {
 		unregisterHotKey(0, uintptr(hotkey.ID))
