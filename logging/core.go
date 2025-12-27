@@ -294,8 +294,8 @@ func ClearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 	if logStringDay == "" {
 		ErrorLog("Log file error, day is empty: " + fullPath)
 	}
-	logDayClean := strings.Replace(logStringDay, ".log", "", 1)
-	logDay, err := ErrorExists(strconv.Atoi(logDayClean))
+	logStringDay = strings.Replace(logStringDay, ".log", "", 1)
+	logDay, err := ErrorExists(strconv.Atoi(logStringDay))
 	if err {
 		ErrorLog("Log file error, day is not a number: " + fullPath)
 	}
