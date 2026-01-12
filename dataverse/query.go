@@ -13,14 +13,6 @@ import (
 // Retrieve records by parameter/s
 // E.g. dataverse.Request("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1") -> []byte JSON
 func Request(table string, params string, returnvalues string) []byte {
-	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
-		Authenticate()
-		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
-			ErrorLog("Failed to retrieve access token")
-			return nil
-		}
-	}
-
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 	if returnvalues != "" && params == "" {
 		url += "?$select=" + returnvalues
@@ -36,14 +28,6 @@ func Request(table string, params string, returnvalues string) []byte {
 // Retrieve record by primary key
 // E.g. dataverse.Retrieve("contacts", "1234567890", "fullname,lastname,emailaddress1") -> []byte JSON
 func Retrieve(table string, id string, returnvalues string) []byte {
-	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
-		Authenticate()
-		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
-			ErrorLog("Failed to retrieve access token")
-			return nil
-		}
-	}
-
 	url := fmt.Sprintf("%s/api/data/v9.2/%s(%s)", Endpoint, table, id)
 	if returnvalues != "" {
 		url += "?$select=" + returnvalues
@@ -62,6 +46,11 @@ func Retrieve(table string, id string, returnvalues string) []byte {
 //
 // E.g. dataverse.Create("contacts", jsondata) -> []byte JSON
 func Create(table string, data []byte) []byte {
+	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
+	return sendRequest(url, "POST", data)
+}
+
+func sendRequest(url string, method string, data []byte) []byte {
 	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
 		Authenticate()
 		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
@@ -70,11 +59,7 @@ func Create(table string, data []byte) []byte {
 		}
 	}
 
-	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
-	return sendRequest(url, "POST", data)
-}
-func sendRequest(url string, method string, data []byte) []byte {
-	if req, err := ErrorExists(http.NewRequest("POST", url, bytes.NewBuffer(data))); err { // Create request
+	if req, err := ErrorExists(http.NewRequest(method, url, bytes.NewBuffer(data))); err { // Create request
 		ErrorLog("Failed to create request: " + url)
 		return nil
 	} else {
