@@ -10,12 +10,17 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
-// Requires an existing access token in dataverse.CurrentAccessToken
-//
-// - Use dataverse.Authenticate() to retrieve a new token
-//
-// Usage: dataverse.Request("contacts", "contactid eq 1234567890")
+// Retrieve records by parameter/s
+// E.g. dataverse.Request("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1") -> []byte JSON
 func Request(table string, params string, returnvalues string) []byte {
+	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+		Authenticate()
+		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+			ErrorLog("Failed to retrieve access token")
+			return nil
+		}
+	}
+
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 	if returnvalues != "" && params == "" {
 		url += "?$select=" + returnvalues
@@ -25,107 +30,25 @@ func Request(table string, params string, returnvalues string) []byte {
 		url += "?" + params
 	}
 
-	if req, err := ErrorExists(http.NewRequest("GET", url, nil)); err { // Create request
-		ErrorLog("Failed to create request: " + url)
-		return nil
-	} else {
-		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("OData-MaxVersion", "4.0")
-		req.Header.Set("OData-Version", "4.0")
-
-		client := &http.Client{}
-		if resp, err := ErrorExists(client.Do(req)); err { // Send request
-			ErrorLog("CRM Request Failed: " + url)
-			return nil
-		} else {
-			defer resp.Body.Close()
-
-			if NetworkDebug {
-				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))
-				TraceLog("----------")
-				TraceLog("Response Headers:")
-				for key, value := range resp.Header {
-					TraceLog(fmt.Sprintf("%s: %s", key, value))
-				}
-				TraceLog("----------")
-			}
-
-			if body, err := ErrorExists(io.ReadAll(resp.Body)); err { // Read response
-				ErrorLog("Failed to read response body")
-				return nil
-			} else {
-				if NetworkDebug {
-					TraceLog("Response body:")
-					TraceLog(string(body))
-					TraceLog("----------")
-				}
-				if resp.StatusCode != 200 {
-					ErrorLog(fmt.Sprintf("HTTP Error %d: %s", resp.StatusCode, string(body)))
-					return nil
-				}
-				return body
-			}
-		}
-	}
+	return sendRequest(url, "GET", nil)
 }
 
-// Requires an existing access token in dataverse.CurrentAccessToken
-//
-// - Use dataverse.Authenticate() to retrieve a new token
-//
-// Usage: dataverse.Retrieve("contacts", "1234567890", "fullname,lastname,emailaddress1")
+// Retrieve record by primary key
+// E.g. dataverse.Retrieve("contacts", "1234567890", "fullname,lastname,emailaddress1") -> []byte JSON
 func Retrieve(table string, id string, returnvalues string) []byte {
+	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+		Authenticate()
+		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+			ErrorLog("Failed to retrieve access token")
+			return nil
+		}
+	}
+
 	url := fmt.Sprintf("%s/api/data/v9.2/%s(%s)", Endpoint, table, id)
 	if returnvalues != "" {
 		url += "?$select=" + returnvalues
 	}
-
-	if req, err := ErrorExists(http.NewRequest("GET", url, nil)); err { // Create request
-		ErrorLog("Failed to create request: " + url)
-		return nil
-	} else {
-		req.Header.Set("Authorization", "Bearer "+CurrentAccessToken.AccessToken)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("OData-MaxVersion", "4.0")
-		req.Header.Set("OData-Version", "4.0")
-
-		client := &http.Client{}
-		if resp, err := ErrorExists(client.Do(req)); err { // Send request
-			ErrorLog("CRM Request Failed: " + url)
-			return nil
-		} else {
-			defer resp.Body.Close()
-
-			if NetworkDebug {
-				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))
-				TraceLog("----------")
-				TraceLog("Response Headers:")
-				for key, value := range resp.Header {
-					TraceLog(fmt.Sprintf("%s: %s", key, value))
-				}
-				TraceLog("----------")
-			}
-
-			if body, err := ErrorExists(io.ReadAll(resp.Body)); err { // Read response
-				ErrorLog("Failed to read response body")
-				return nil
-			} else {
-				if NetworkDebug {
-					TraceLog("Response body:")
-					TraceLog(string(body))
-					TraceLog("----------")
-				}
-				if resp.StatusCode != 200 {
-					ErrorLog(fmt.Sprintf("HTTP Error %d: %s", resp.StatusCode, string(body)))
-					return nil
-				}
-				return body
-			}
-		}
-	}
+	return sendRequest(url, "GET", nil)
 }
 
 // Add a record into an existing table.
@@ -137,10 +60,20 @@ func Retrieve(table string, id string, returnvalues string) []byte {
 //			Author       string `json:"cr244_author"`
 //	}
 //
-// dataverse.Create("contacts", data)
+// E.g. dataverse.Create("contacts", jsondata) -> []byte JSON
 func Create(table string, data []byte) []byte {
-	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
+	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+		Authenticate()
+		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+			ErrorLog("Failed to retrieve access token")
+			return nil
+		}
+	}
 
+	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
+	return sendRequest(url, "POST", data)
+}
+func sendRequest(url string, method string, data []byte) []byte {
 	if req, err := ErrorExists(http.NewRequest("POST", url, bytes.NewBuffer(data))); err { // Create request
 		ErrorLog("Failed to create request: " + url)
 		return nil
