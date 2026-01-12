@@ -5,34 +5,48 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
 // Retrieve records by parameter/s
 // E.g. dataverse.Request("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1") -> []byte JSON
-func Request(table string, params string, returnvalues string) []byte {
-	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
-	if returnvalues != "" && params == "" {
-		url += "?$select=" + returnvalues
-	} else if returnvalues != "" && params != "" {
-		url += "?" + params + "&$select=" + returnvalues
-	} else if returnvalues == "" && params != "" {
-		url += "?" + params
-	}
+func Retrieve(table, filter, returnValues string, order ...string) []byte {
+	base := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 
-	return sendRequest(url, "GET", nil)
+	if u, err := ErrorExists(url.Parse(base)); err {
+		return nil
+	} else {
+		q := u.Query()
+		q.Set("$filter", filter)                                  // Parameters
+		q.Set("$select", returnValues)                            // Return values
+		if len(order) == 1 && strings.TrimSpace(order[0]) != "" { // Order by
+			q.Set("$orderby", order[0])
+		} else if len(order) > 1 {
+			q.Set("$orderby", strings.Join(order, ","))
+		}
+
+		u.RawQuery = q.Encode()
+		return sendRequest(u.String(), "GET", nil)
+	}
 }
 
 // Retrieve record by primary key
 // E.g. dataverse.Retrieve("contacts", "1234567890", "fullname,lastname,emailaddress1") -> []byte JSON
-func Retrieve(table string, id string, returnvalues string) []byte {
-	url := fmt.Sprintf("%s/api/data/v9.2/%s(%s)", Endpoint, table, id)
-	if returnvalues != "" {
-		url += "?$select=" + returnvalues
+func RetrieveByID(table string, id string, returnValues string) []byte {
+	base := fmt.Sprintf("%s/api/data/v9.2/%s(%s)", Endpoint, table, id)
+
+	if u, err := ErrorExists(url.Parse(base)); err {
+		return nil
+	} else {
+		q := u.Query()
+		q.Set("$select", returnValues) // Parameters
+		u.RawQuery = q.Encode()
+		return sendRequest(u.String(), "GET", nil)
 	}
-	return sendRequest(url, "GET", nil)
 }
 
 // Add a record into an existing table.
