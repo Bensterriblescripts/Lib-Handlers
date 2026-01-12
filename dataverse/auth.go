@@ -39,7 +39,7 @@ var CurrentAccessToken Token
 //
 // - dataverse.Endpoint (string)
 //
-// - dataverse.DataverseDebug (Bool, Verbose Logging)
+// - Optional (Default = false): dataverse.DataverseDebug (Bool, Verbose Logging)
 //
 // Returns the current access token, as well as storing it in dataverse.CurrentAccessToken
 func Authenticate() Token {
