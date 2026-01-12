@@ -76,7 +76,7 @@ func sendRequest(url string, method string, data []byte) []byte {
 		} else {
 			defer resp.Body.Close()
 
-			if NetworkDebug {
+			if DataverseDebug {
 				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))
 				TraceLog("----------")
 				TraceLog("Response Headers:")
@@ -90,7 +90,7 @@ func sendRequest(url string, method string, data []byte) []byte {
 				ErrorLog("Failed to read response body")
 				return nil
 			} else {
-				if NetworkDebug {
+				if DataverseDebug {
 					TraceLog("Response body:")
 					TraceLog(string(body))
 					TraceLog("----------")

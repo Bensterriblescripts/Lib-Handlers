@@ -18,7 +18,7 @@ type Token struct {
 	AccessToken  string `json:"access_token"`
 }
 
-var NetworkDebug bool = false
+var DataverseDebug bool = false
 
 var ClientID guid.Guid
 var ClientSecret string
@@ -39,7 +39,7 @@ var CurrentAccessToken Token
 //
 // - dataverse.Endpoint (string)
 //
-// - dataverse.NetworkDebug (Bool, Verbose Logging)
+// - dataverse.DataverseDebug (Bool, Verbose Logging)
 //
 // Returns the current access token, as well as storing it in dataverse.CurrentAccessToken
 func Authenticate() Token {
@@ -65,7 +65,7 @@ func getAccessToken() Token {
 		"scope":         {Endpoint + "/.default"},
 	}
 
-	if NetworkDebug {
+	if DataverseDebug {
 		TraceLog("Sending request to: " + tokenurl)
 		TraceLog("Data: " + data.Encode())
 	}
@@ -83,7 +83,7 @@ func getAccessToken() Token {
 			ErrorLog("Response body is empty")
 			return Token{}
 		}
-		if NetworkDebug {
+		if DataverseDebug {
 			TraceLog("Response: " + resp.Status)
 			TraceLog("Response Headers:")
 			for key, value := range resp.Header {
