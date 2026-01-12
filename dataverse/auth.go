@@ -18,7 +18,7 @@ type Token struct {
 	AccessToken  string `json:"access_token"`
 }
 
-var DataverseDebug bool = false
+var VerboseLogging bool = true
 
 var ClientID guid.Guid
 var ClientSecret string
@@ -65,7 +65,7 @@ func getAccessToken() Token {
 		"scope":         {Endpoint + "/.default"},
 	}
 
-	if DataverseDebug {
+	if VerboseLogging {
 		TraceLog("Sending request to: " + tokenurl)
 		TraceLog("Data: " + data.Encode())
 	}
@@ -83,7 +83,7 @@ func getAccessToken() Token {
 			ErrorLog("Response body is empty")
 			return Token{}
 		}
-		if DataverseDebug {
+		if VerboseLogging {
 			TraceLog("Response: " + resp.Status)
 			TraceLog("Response Headers:")
 			for key, value := range resp.Header {
