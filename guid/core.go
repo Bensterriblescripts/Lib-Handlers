@@ -12,9 +12,13 @@ type Guid struct {
 	Valid  bool
 }
 
-// Create a new Guid from a String
+// # Create a new Guid from a String
 //
-// Primarily used to clean a string into a valid Guid or store a new Guid
+// primarily used to clean a string into a valid Guid or store a new Guid
+//
+// passing an empty string will create a 0-value guid.String with a false guid.Valid value
+//
+// if the guid passed in is invalid, the resulting guid.Valid will be false
 func New(value ...string) Guid {
 	guid := Guid{
 		"00000000-0000-0000-0000-000000000000",
@@ -44,10 +48,10 @@ func New(value ...string) Guid {
 	return guid
 }
 
-// Checks if a Guid matches a String
+// # Check if a Guid matches a String
 //
-// Note: A guid can always be compared against another guid with == due to the formatting enforced in guid.New()
-func Matches(val Guid, otherval string) bool {
+// Note: guid.String can always be compared against another guid.String with == due to the formatting enforced in guid.New()
+func MatchesString(val Guid, otherval string) bool {
 	if !val.Valid {
 		ErrorLog("First parameter passed into guid.MatchesString is invalid " + val.String)
 		return false
