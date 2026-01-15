@@ -319,7 +319,7 @@ func ClearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 
 	TraceLog("Log File: " + fullPath)
 	TraceLog("File Day: " + logStringDay + ", File Month: " + logStringMonth + ", File Year: " + logStringYear)
-	TraceLog("Current Day" + logCurrentDay + ", Current Month: " + logCurrentMonth + ", Current Year: " + logCurrentYear)
+	TraceLog("Current Day: " + logCurrentDay + ", Current Month: " + logCurrentMonth + ", Current Year: " + logCurrentYear)
 
 	if logDay > daysToKeep { // If our days don't go back to the previous month
 		if logYear != currentYear || logMonth != currentMonth {
@@ -331,5 +331,6 @@ func ClearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 	}
 }
 func RemoveLog(fullPath string) {
+	TraceLog("Removing log file: " + fullPath)
 	PrintErr(os.Remove(fullPath))
 }

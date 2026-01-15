@@ -12,7 +12,7 @@ import (
 )
 
 func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
-	TraceLog("Starting SSH tunnel " + localAddr + " -> " + remoteAddr)
+	TraceLog("Starting SSH listening tunnel in new thread: " + localAddr + " -> " + remoteAddr)
 	ln := PanicError(net.Listen("tcp", localAddr))
 	go func() {
 		for {
@@ -29,9 +29,11 @@ func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 				_, _ = io.Copy(lc, rc)
 				PrintErr(lc.Close())
 				PrintErr(rc.Close())
+				TraceLog("Closed SSH listening tunnel")
 			}()
 		}
 	}()
+	TraceLog("SSH Tunnel Created")
 	return ln
 }
 func LoadDefaultPrivateKeys() ssh.Signer {
