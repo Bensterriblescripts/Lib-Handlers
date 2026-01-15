@@ -15,19 +15,28 @@ type Guid struct {
 // Create a new Guid from a String
 //
 // Primarily used to clean a string into a valid Guid or store a new Guid
-func New(value string) Guid {
-	cleanguid := strings.TrimSpace(value)
-	cleanguid = strings.ToLower(cleanguid)
+func New(value ...string) Guid {
 	guid := Guid{
-		cleanguid,
+		"00000000-0000-0000-0000-000000000000",
 		false,
 	}
-	if len(cleanguid) != 36 {
-		ErrorLog("Invalid GUID Length (" + strconv.Itoa(len(cleanguid)) + ") || " + cleanguid)
+
+	if len(value) == 0 || value[0] == "" {
+		return guid
+	} else if len(value) == 2 {
+		ErrorLog("Too many arguments passed into guid.New")
+		return guid
+	} else {
+		guid.String = strings.TrimSpace(value[0])
+		guid.String = strings.ToLower(guid.String)
+	}
+
+	if len(guid.String) != 36 {
+		ErrorLog("Invalid GUID Length (" + strconv.Itoa(len(guid.String)) + ") || " + guid.String)
 		return guid
 	}
-	if cleanguid[8] != '-' || cleanguid[13] != '-' || cleanguid[18] != '-' || cleanguid[23] != '-' {
-		ErrorLog("Invalid GUID Format || " + cleanguid)
+	if guid.String[8] != '-' || guid.String[13] != '-' || guid.String[18] != '-' || guid.String[23] != '-' {
+		ErrorLog("Invalid GUID Format || " + guid.String)
 		return guid
 	}
 
