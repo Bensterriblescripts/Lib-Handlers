@@ -275,16 +275,16 @@ func RotateLogs(logFolder string) {
 
 			switch logType {
 			case "trace":
-				ClearOutdatedLogs(fullPath, logYear, logMonth, logDay, int(TraceLogRotation))
+				clearOutdatedLogs(fullPath, logYear, logMonth, logDay, int(TraceLogRotation))
 			case "changes", "errors":
-				ClearOutdatedLogs(fullPath, logYear, logMonth, logDay, int(PriorityLogRotation))
+				clearOutdatedLogs(fullPath, logYear, logMonth, logDay, int(PriorityLogRotation))
 			default:
 				ErrorLog("Unknown log type: " + logType)
 			}
 		}
 	}
 }
-func ClearOutdatedLogs(fullPath string, logStringYear string, logStringMonth string, logStringDay string, daysToKeep int) {
+func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth string, logStringDay string, daysToKeep int) {
 	if logStringYear == "" {
 		ErrorLog("Log file error, year is empty: " + fullPath)
 	}
