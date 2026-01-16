@@ -1,6 +1,8 @@
 package guid
 
 import (
+	"bytes"
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -62,4 +64,24 @@ func MatchesString(val Guid, otherval string) bool {
 	}
 
 	return strings.EqualFold(val.String, otherval)
+}
+
+func (g *Guid) UnmarshalJSON(b []byte) error { // Automatically called when unmarshalling JSON
+	if bytes.Equal(b, []byte("null")) {
+		*g = Guid{}
+		return nil
+	}
+
+	var s string
+	if ErrExists(json.Unmarshal(b, &s)) {
+		return nil
+	}
+
+	if s == "" {
+		*g = Guid{}
+		return nil
+	}
+
+	*g = New(s)
+	return nil
 }
