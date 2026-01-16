@@ -82,6 +82,7 @@ func sendRequest(url string, method string, data []byte) []byte {
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
 		req.Header.Set("OData-Version", "4.0")
+		req.Header.Set("odata.include-annotations", "OData.Community.Display.V1.FormattedValue")
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
