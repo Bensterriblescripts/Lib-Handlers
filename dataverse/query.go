@@ -30,7 +30,7 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 		}
 
 		u.RawQuery = q.Encode()
-		return sendRequest(u.String(), "GET", nil)
+		return sendRequest(u.String(), "GET", nil, true)
 	}
 }
 
@@ -45,7 +45,7 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 		q := u.Query()
 		q.Set("$select", returnValues) // Parameters
 		u.RawQuery = q.Encode()
-		return sendRequest(u.String(), "GET", nil)
+		return sendRequest(u.String(), "GET", nil, true)
 	}
 }
 
@@ -61,10 +61,10 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 // E.g. dataverse.Create("contacts", jsondata) -> []byte JSON
 func Create(table string, data []byte) []byte {
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
-	return sendRequest(url, "POST", data)
+	return sendRequest(url, "POST", data, false)
 }
 
-func sendRequest(url string, method string, data []byte) []byte {
+func sendRequest(url string, method string, data []byte, includeAnnotations bool) []byte {
 	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
 		Authenticate()
 		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
@@ -82,7 +82,10 @@ func sendRequest(url string, method string, data []byte) []byte {
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
 		req.Header.Set("OData-Version", "4.0")
-		req.Header.Set("odata.include-annotations", "OData.Community.Display.V1.FormattedValue")
+		if includeAnnotations {
+			req.Header.Set("Prefer", `odata.include-annotations="*"`)
+		}
+		// req.Header.Set("Prefer", `odata.include-annotations="OData.Community.Display.V1.FormattedValue"`)
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
