@@ -37,14 +37,8 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 // Retrieve records using your own query
 // Enter the entire url, this will not build for you
 func RetrieveQuery(table string, query string) []byte {
-	base := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
-
-	if u, err := ErrorExists(url.Parse(base)); err {
-		return nil
-	} else {
-		u.RawQuery = query
-		return sendRequest(u.String(), "GET", nil, true)
-	}
+	url := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
+	return sendRequest(url, "GET", nil, true)
 }
 
 // Retrieve record by primary key
