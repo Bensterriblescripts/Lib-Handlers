@@ -55,6 +55,23 @@ func Authenticate() Token {
 		return CurrentAccessToken
 	}
 }
+
+// Checks if the access token is valid
+//
+// If empty or not valid, it will attempt to retrieve a new one.
+//
+// Returns true if valid or reauthenticated. False if not.
+func EnsureAuthenticated() bool {
+	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+		Authenticate()
+		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+			ErrorLog("Failed to retrieve access token")
+			return false
+		}
+	}
+	return true
+}
+
 func getAccessToken() Token {
 	var token Token
 	tokenurl := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", TenantID.String)

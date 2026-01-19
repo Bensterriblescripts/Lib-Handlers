@@ -66,10 +66,27 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 //			Author       string `json:"cr244_author"`
 //	}
 //
-// E.g. dataverse.Create("contacts", jsondata) -> []byte JSON
-func Create(table string, data []byte) []byte {
+// E.g. dataverse.Create("contacts", jsondata) -> bool
+func Create(table string, createData map[string]interface{}) bool {
+	if table == "" {
+		ErrorLog("Empty table found when trying to create record")
+		return false
+	}
+	if createData == nil {
+		ErrorLog("Empty data found when trying to create record")
+		return false
+	}
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
-	return sendRequest(url, "POST", data, false)
+	if jsonData, err := ErrorExists(json.Marshal(createData)); err {
+		ErrorLog("Failed to marshal create data: " + string(jsonData))
+		return false
+	} else {
+		if response := sendRequest(url, "POST", jsonData, false); response == nil {
+			ErrorLog("Failed to create record: " + url)
+			return false
+		}
+	}
+	return true
 }
 
 // Update a table record by ID
@@ -106,12 +123,9 @@ func Update(table string, recordid string, updateData map[string]interface{}) bo
 }
 
 func sendRequest(url string, method string, data []byte, includeAnnotations bool) []byte {
-	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
-		Authenticate()
-		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
-			ErrorLog("Failed to retrieve access token")
-			return nil
-		}
+	if !EnsureAuthenticated() {
+		ErrorLog("Failed to validate access token")
+		return nil
 	}
 
 	if req, err := ErrorExists(http.NewRequest(method, url, bytes.NewBuffer(data))); err { // Create request
