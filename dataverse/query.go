@@ -13,6 +13,8 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
+var AllowAnnotatations bool = true
+
 // Retrieve records by parameter/s
 // E.g. dataverse.Request("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1", "lastname asc") -> []byte JSON
 func Retrieve(table, filter, returnValues string, order ...string) []byte {
@@ -31,7 +33,7 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 		}
 
 		u.RawQuery = q.Encode()
-		return sendRequest(u.String(), "GET", nil, true)
+		return sendRequest(u.String(), "GET", nil)
 	}
 }
 
@@ -39,7 +41,7 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 // Enter the entire url, this will not build for you
 func RetrieveQuery(table string, query string) []byte {
 	url := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
-	return sendRequest(url, "GET", nil, true)
+	return sendRequest(url, "GET", nil)
 }
 
 // Retrieve record by primary key
@@ -53,7 +55,7 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 		q := u.Query()
 		q.Set("$select", returnValues) // Parameters
 		u.RawQuery = q.Encode()
-		return sendRequest(u.String(), "GET", nil, true)
+		return sendRequest(u.String(), "GET", nil)
 	}
 }
 
@@ -81,7 +83,7 @@ func Create(table string, createData map[string]interface{}) bool {
 		ErrorLog("Failed to marshal create data: " + string(jsonData))
 		return false
 	} else {
-		if response := sendRequest(url, "POST", jsonData, false); response == nil {
+		if response := sendRequest(url, "POST", jsonData); response == nil {
 			ErrorLog("Failed to create record: " + url)
 			return false
 		}
@@ -113,7 +115,7 @@ func Update(table string, recordid string, updateData map[string]interface{}) bo
 			ErrorLog("Failed to marshal update data: " + string(jsonData))
 			return false
 		} else {
-			if response := sendRequest(u.String(), "PATCH", jsonData, false); response == nil {
+			if response := sendRequest(u.String(), "PATCH", jsonData); response == nil {
 				ErrorLog("Failed to update record: " + baseurl)
 				return false
 			}
@@ -122,7 +124,7 @@ func Update(table string, recordid string, updateData map[string]interface{}) bo
 	}
 }
 
-func sendRequest(url string, method string, data []byte, includeAnnotations bool) []byte {
+func sendRequest(url string, method string, data []byte) []byte {
 	if !EnsureAuthenticated() {
 		ErrorLog("Failed to validate access token")
 		return nil
@@ -137,9 +139,7 @@ func sendRequest(url string, method string, data []byte, includeAnnotations bool
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
 		req.Header.Set("OData-Version", "4.0")
-		if includeAnnotations {
-			req.Header.Set("Prefer", `odata.include-annotations="*"`)
-		}
+		req.Header.Set("Prefer", `odata.include-annotations="*"`)
 		// req.Header.Set("Prefer", `odata.include-annotations="OData.Community.Display.V1.FormattedValue"`)
 
 		client := &http.Client{}
