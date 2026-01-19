@@ -13,7 +13,7 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
-var AllowAnnotatations bool = true
+var AllowAnnotations bool = true
 
 // Retrieve records by parameter/s
 // E.g. dataverse.Request("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1", "lastname asc") -> []byte JSON
@@ -139,8 +139,10 @@ func sendRequest(url string, method string, data []byte) []byte {
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
 		req.Header.Set("OData-Version", "4.0")
-		req.Header.Set("Prefer", `odata.include-annotations="*"`)
-		// req.Header.Set("Prefer", `odata.include-annotations="OData.Community.Display.V1.FormattedValue"`)
+		if AllowAnnotations {
+			req.Header.Set("Prefer", `odata.include-annotations="*"`)
+			// req.Header.Set("Prefer", `odata.include-annotations="OData.Community.Display.V1.FormattedValue"`)
+		}
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
