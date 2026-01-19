@@ -2,6 +2,7 @@ package dataverse
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -69,6 +70,39 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 func Create(table string, data []byte) []byte {
 	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 	return sendRequest(url, "POST", data, false)
+}
+
+// Update a table record by ID
+//
+// Data should be a map[string (column name)]interface{}("new value")
+//
+// E.g. Update("contacts", "000000-000-0000-000000", map[string]interface{}{"mito_totarasync": nil})
+// Or create the map first | newData := map[string]interface{} | and append it
+func Update(table string, recordid string, updateData map[string]interface{}) bool {
+	if table == "" || updateData == nil || recordid == "" {
+		ErrorLog("Empty parameter during update")
+		ErrorLog("Table: " + table)
+		ErrorLog("Update Data: " + fmt.Sprintf("%v", updateData))
+		ErrorLog("Record ID: " + recordid)
+		return false
+	}
+	baseurl := fmt.Sprintf("%s/api/data/v9.2/%s(%s)", Endpoint, table, recordid)
+
+	if u, err := ErrorExists(url.Parse(baseurl)); err {
+		ErrorLog("Failed to parse URL: " + baseurl)
+		return false
+	} else {
+		if jsonData, err := ErrorExists(json.Marshal(updateData)); err {
+			ErrorLog("Failed to marshal update data: " + string(jsonData))
+			return false
+		} else {
+			if response := sendRequest(u.String(), "PATCH", jsonData, false); response == nil {
+				ErrorLog("Failed to update record: " + baseurl)
+				return false
+			}
+		}
+		return true
+	}
 }
 
 func sendRequest(url string, method string, data []byte, includeAnnotations bool) []byte {
