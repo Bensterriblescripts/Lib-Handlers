@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/Bensterriblescripts/Lib-Handlers/guid"
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
+	"github.com/Bensterriblescripts/Lib-Handlers/time"
 )
 
 type Token struct {
@@ -16,6 +18,7 @@ type Token struct {
 	ExpiresIn    int    `json:"expires_in"`
 	ExtExpiresIn int    `json:"ext_expires_in"`
 	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 var VerboseLogging bool = true
@@ -26,6 +29,7 @@ var TenantID guid.Guid
 var Endpoint string
 
 var CurrentAccessToken Token
+var CurrentAccessExpires int
 
 // Authenticate with the Azure and retrieve a new access token
 //
@@ -43,15 +47,19 @@ var CurrentAccessToken Token
 //
 // Returns the current access token, as well as storing it in dataverse.CurrentAccessToken
 func Authenticate() Token {
-	TraceLog("Authenticating...")
+	TraceLog("Retrieving access token...")
 
 	newtoken := getAccessToken()
 	if newtoken == (Token{}) {
-		ErrorLog("Failed to get access token")
+		ErrorLog("Failed to get access token from Dataverse")
 		return newtoken
 	} else {
-		TraceLog("Retrieved new access token")
+		TraceLog("Access token retrieved from Dataverse")
+		if VerboseLogging {
+			TraceLog("Access token expires in: " + strconv.Itoa(newtoken.ExpiresIn) + " seconds")
+		}
 		CurrentAccessToken = newtoken
+		CurrentAccessExpires = int(time.GetUnixTime()) + newtoken.ExpiresIn
 		return CurrentAccessToken
 	}
 }
@@ -61,12 +69,38 @@ func Authenticate() Token {
 // If empty or not valid, it will attempt to retrieve a new one.
 //
 // Returns true if valid or reauthenticated. False if not.
+func IsAuthenticated() bool {
+	if CurrentAccessToken == (Token{}) {
+		TraceLog("Dataverse access token was not set")
+		return false
+	} else if CurrentAccessToken.AccessToken == "" {
+		TraceLog("Dataverse access token was empty")
+		return false
+	} else if CurrentAccessExpires < int(time.GetUnixTime()) {
+		TraceLog("Dataverse access token has expired")
+		return false
+	}
+
+	if VerboseLogging {
+		TraceLog("Dataverse access token passed validation")
+	}
+	return true
+}
+
+// Checks if the access token is valid
+//
+// If empty or not valid, it will attempt to retrieve a new one.
+//
+// Returns true if valid or reauthenticated. False if not.
 func EnsureAuthenticated() bool {
-	if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
+	if !IsAuthenticated() {
 		Authenticate()
-		if CurrentAccessToken == (Token{}) || CurrentAccessToken.AccessToken == "" {
-			ErrorLog("Failed to retrieve access token")
+		if !IsAuthenticated() {
+			ErrorLog("Failed to reauthenticate with Dataverse")
 			return false
+		} else {
+			TraceLog("Reauthenticated with Dataverse")
+			return true
 		}
 	}
 	return true
@@ -85,6 +119,7 @@ func getAccessToken() Token {
 	if VerboseLogging {
 		TraceLog("Sending request to: " + tokenurl)
 		TraceLog("Data: " + data.Encode())
+		TraceLog("----------")
 	}
 	if resp, err := ErrorExists(http.PostForm(tokenurl, data)); err {
 		if resp.Body != nil {
