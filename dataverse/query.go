@@ -51,6 +51,7 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 			q.Set("$filter", filter) // Parameters
 		}
 		if returnValues != "" {
+			q.Set("$select", returnValues) // Return values
 		}
 		if len(order) == 1 && strings.TrimSpace(order[0]) != "" { // Order by
 			q.Set("$orderby", order[0])
