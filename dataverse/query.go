@@ -18,6 +18,22 @@ var AllowAnnotations bool = true
 // Retrieve records using your own query
 // Enter the entire url, this will not build for you
 func Query(method string, table string, query string) []byte {
+	if table == "" {
+		ErrorLog("Empty table found when trying to query dataverse")
+		return nil
+	}
+	if query == "" {
+		ErrorLog("Empty query found when trying to query dataverse")
+		return nil
+	}
+
+	if method == "" {
+		method = "GET"
+		if VerboseLogging {
+			TraceLog("No method found in query, using GET")
+		}
+	}
+
 	url := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
 	return sendRequest(url, method, nil)
 }
@@ -31,8 +47,11 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 		return nil
 	} else {
 		q := u.Query()
-		q.Set("$filter", filter)                                  // Parameters
-		q.Set("$select", returnValues)                            // Return values
+		if filter != "" {
+			q.Set("$filter", filter) // Parameters
+		}
+		if returnValues != "" {
+		}
 		if len(order) == 1 && strings.TrimSpace(order[0]) != "" { // Order by
 			q.Set("$orderby", order[0])
 		} else if len(order) > 1 {
@@ -53,7 +72,9 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 		return nil
 	} else {
 		q := u.Query()
-		q.Set("$select", returnValues) // Parameters
+		if returnValues != "" {
+			q.Set("$select", returnValues) // Parameters
+		}
 		u.RawQuery = q.Encode()
 		return sendRequest(u.String(), "GET", nil)
 	}
