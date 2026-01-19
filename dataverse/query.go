@@ -15,6 +15,13 @@ import (
 
 var AllowAnnotations bool = true
 
+// Retrieve records using your own query
+// Enter the entire url, this will not build for you
+func Query(method string, table string, query string) []byte {
+	url := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
+	return sendRequest(url, method, nil)
+}
+
 // Retrieve records by parameter/s
 // E.g. dataverse.Request("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1", "lastname asc") -> []byte JSON
 func Retrieve(table, filter, returnValues string, order ...string) []byte {
@@ -35,13 +42,6 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 		u.RawQuery = q.Encode()
 		return sendRequest(u.String(), "GET", nil)
 	}
-}
-
-// Retrieve records using your own query
-// Enter the entire url, this will not build for you
-func RetrieveQuery(table string, query string) []byte {
-	url := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
-	return sendRequest(url, "GET", nil)
 }
 
 // Retrieve record by primary key
