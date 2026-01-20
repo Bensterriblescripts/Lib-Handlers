@@ -28,7 +28,11 @@ func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 				go func() { _, _ = io.Copy(rc, lc) }()
 				_, _ = io.Copy(lc, rc)
 				PrintErr(lc.Close())
-				PrintErr(rc.Close())
+				rcErr := rc.Close()
+				if rcErr != nil && rcErr != io.EOF {
+					PrintErr(rcErr)
+				}
+
 				TraceLog("Closed SSH listening tunnel")
 			}()
 		}

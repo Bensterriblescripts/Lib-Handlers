@@ -120,6 +120,8 @@ func WrapPanic(fn func() error) {
 //	func() {
 //		Panic("critical failure")
 //	}
+//
+// Closes all log files and exits with code 512
 func Panic(message string) {
 	message = RetrieveLatestCaller(message)
 
@@ -143,6 +145,7 @@ func Panic(message string) {
 		fmt.Println(message)
 	}
 	if ErrorLogFile != nil {
+		TraceLog("Panic Shutdown")
 		PrintErr(ErrorLogFile.Close())
 	}
 	if ChangeLogFile != nil {
