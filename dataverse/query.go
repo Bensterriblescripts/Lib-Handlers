@@ -211,7 +211,7 @@ func sendRequest(url string, method string, data []byte) []byte {
 					TraceLog(string(body))
 					TraceLog("----------")
 				}
-				if (resp.StatusCode-200) > 99 && (resp.StatusCode-200) < 0 { // Dataverse sends back different 200 status codes for some unholy reason
+				if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 					ErrorLog(fmt.Sprintf("HTTP Error %d: %s", resp.StatusCode, string(body)))
 					return nil
 				}
