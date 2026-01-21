@@ -17,7 +17,8 @@ var AllowAnnotations bool = true
 var MaxPageSize = 5000 // Set to 0 to use dataverse defaults
 
 // Retrieve records using your own query
-// Enter the entire url, this will not build for you
+//
+// Automatically appends ? if missing
 func Query(method string, table string, query string) []byte {
 	if table == "" {
 		ErrorLog("Empty table found when trying to query dataverse")
@@ -33,6 +34,10 @@ func Query(method string, table string, query string) []byte {
 		if VerboseLogging {
 			TraceLog("No method found in query, using GET")
 		}
+	}
+
+	if !strings.HasPrefix(query, "?") {
+		query = "?" + query
 	}
 
 	url := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
