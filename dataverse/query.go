@@ -173,12 +173,16 @@ func sendRequest(url string, method string, data []byte) []byte {
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
 		req.Header.Set("OData-Version", "4.0")
+
+		prefer := []string{}
 		if MaxPageSize > 0 {
-			req.Header.Set("Prefer", "odata.maxpagesize="+strconv.Itoa(MaxPageSize))
+			prefer = append(prefer, "odata.maxpagesize="+strconv.Itoa(MaxPageSize)) // Pagination, required if too many results (training packages)
 		}
 		if AllowAnnotations {
-			req.Header.Set("Prefer", `odata.include-annotations="*"`)
-			// req.Header.Set("Prefer", `odata.include-annotations="OData.Community.Display.V1.FormattedValue"`)
+			prefer = append(prefer, `odata.include-annotations="*"`) // Required for entity record labels (e.g. guid vs display name)
+		}
+		if len(prefer) > 0 {
+			req.Header.Set("Prefer", strings.Join(prefer, ","))
 		}
 
 		client := &http.Client{}
