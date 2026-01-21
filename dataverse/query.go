@@ -14,6 +14,7 @@ import (
 )
 
 var AllowAnnotations bool = true
+var MaxPageSize = 5000 // Set to 0 to use dataverse defaults
 
 // Retrieve records using your own query
 // Enter the entire url, this will not build for you
@@ -62,6 +63,12 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 		u.RawQuery = q.Encode()
 		return sendRequest(u.String(), "GET", nil)
 	}
+}
+
+// Retrieve the next page of results
+// E.g. dataverse.RetrieveNext(nextLink) -> []byte JSON
+func RetrieveNext(nextLink string) []byte {
+	return sendRequest(nextLink, "GET", nil)
 }
 
 // Retrieve record by primary key
@@ -161,6 +168,9 @@ func sendRequest(url string, method string, data []byte) []byte {
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("OData-MaxVersion", "4.0")
 		req.Header.Set("OData-Version", "4.0")
+		if MaxPageSize > 0 {
+			req.Header.Set("Prefer", "odata.maxpagesize="+strconv.Itoa(MaxPageSize))
+		}
 		if AllowAnnotations {
 			req.Header.Set("Prefer", `odata.include-annotations="*"`)
 			// req.Header.Set("Prefer", `odata.include-annotations="OData.Community.Display.V1.FormattedValue"`)
