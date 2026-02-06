@@ -10,7 +10,7 @@ import (
 //
 //	ok := osapi.RunExeAtLogon("MyApp", "C:\\Local\\Software\\MyApp.exe")
 func RunExeAtLogon(name string, path string) bool {
-	out, success := Run(`
+	out, success := PowerShell(`
 		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "` + name + `" -Value '"` + path + `"' -PropertyType String -Force
 	`)
 	if !success {

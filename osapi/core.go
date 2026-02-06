@@ -1,9 +1,11 @@
 package osapi
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -14,16 +16,21 @@ import (
 // Example:
 //
 //	out, ok := osapi.Run("Get-Date")
-func Run(command string) (string, bool) {
+func PowerShell(command string) (string, bool) {
 	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // No powershell window
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // No window
+	var stdout, stderr strings.Builder
 
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(out), false
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout, TraceLogFile)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr, ErrorLogFile)
+
+	if ErrExists(cmd.Run()) {
+		return stderr.String(), false
+	} else {
+		return stdout.String(), true
 	}
-	return string(out), true
 }
+
 // EnsurePath creates all directories needed for the given path.
 //
 // Example:
@@ -36,6 +43,7 @@ func EnsurePath(path string) bool {
 	}
 	return true
 }
+
 // GetFileSize returns the file size in bytes.
 //
 // Example:
@@ -54,6 +62,7 @@ func GetFileSize(path string) int64 {
 		return info.Size()
 	}
 }
+
 // AddToLocalSoftware copies the current executable to C:\\Local\\Software.
 //
 // Example:
@@ -78,7 +87,7 @@ func AddToLocalSoftware() bool {
 			return false
 		}
 
-		out, success := Run(`Copy-Item -Path ` + currentExe + ` -Destination "C:\Local\Software\` + AppName + `.exe" -Force`)
+		out, success := PowerShell(`Copy-Item -Path ` + currentExe + ` -Destination "C:\Local\Software\` + AppName + `.exe" -Force`)
 		if !success {
 			ErrorLog("Failed to copy self to software: " + out)
 			return false
