@@ -53,6 +53,11 @@ type FileResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
+// UploadFile uploads a file, fetches its contents, and structures the response.
+//
+// Example:
+//
+//	data := llm.UploadFile("C:\\Docs\\report.pdf", "user_data")
 func UploadFile(path string, purpose string) []byte {
 	if path == "" {
 		ErrorLog("Path is empty")
@@ -93,6 +98,11 @@ func UploadFile(path string, purpose string) []byte {
 
 	return response
 }
+// UseUploadedFile fetches and structures contents for an existing file ID.
+//
+// Example:
+//
+//	data := llm.UseUploadedFile("file_abc123")
 func UseUploadedFile(fileid string) []byte {
 	response := GetContents(fileid)
 	if response == nil {
@@ -113,6 +123,11 @@ func UseUploadedFile(fileid string) []byte {
 	return response
 }
 
+// handleFileUpload uploads a file to OpenAI and returns its file ID.
+//
+// Example:
+//
+//	fileID := handleFileUpload("C:\\Docs\\report.pdf", "user_data")
 func handleFileUpload(path string, purpose string) string {
 	if strings.TrimSpace(path) == "" {
 		ErrorLog("Path is empty")
@@ -183,6 +198,11 @@ func handleFileUpload(path string, purpose string) string {
 		return response.ID
 	}
 }
+// GetContents requests a structured table of contents for a file.
+//
+// Example:
+//
+//	body := llm.GetContents("file_abc123")
 func GetContents(fileid string) []byte {
 	response := SendRequest([]PromptMessage{
 		{
@@ -212,6 +232,11 @@ func GetContents(fileid string) []byte {
 	}
 	return response
 }
+// StructureContents validates and normalizes a table of contents response.
+//
+// Example:
+//
+//	body := llm.StructureContents(raw)
 func StructureContents(contents []byte) []byte {
 	response := SendRequest([]PromptMessage{
 		{
@@ -242,6 +267,11 @@ func StructureContents(contents []byte) []byte {
 	return response
 }
 
+// SendRequest issues a chat request to the OpenAI Responses API.
+//
+// Example:
+//
+//	body := llm.SendRequest(prompts, "gpt-5-2025-08-07")
 func SendRequest(textprompts []PromptMessage, model string) []byte {
 	if OpenAIApiKey == "" {
 		Panic("OpenAI API key has not been set")

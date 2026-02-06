@@ -9,6 +9,11 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// EnumWindowsCallback collects visible window details for enumeration.
+//
+// Example:
+//
+//	cb := syscall.NewCallback(osapi.EnumWindowsCallback)
 func EnumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	if visible, _, _ := procIsWindowVisible.Call(hwnd); visible == 0 {
 		return 1
@@ -62,6 +67,11 @@ func EnumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	activeWindows = append(activeWindows, window)
 	return 1
 }
+// GetProcessImagePath returns the full executable path for a process.
+//
+// Example:
+//
+//	path, err := osapi.GetProcessImagePath(1234)
 func GetProcessImagePath(pid uint32) (path string, err error) {
 	const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 
@@ -98,6 +108,11 @@ func GetProcessImagePath(pid uint32) (path string, err error) {
 	path = windows.UTF16ToString(buf[:size])
 	return path, nil
 }
+// GetFileDescriptionByPath reads the FileDescription metadata for an executable.
+//
+// Example:
+//
+//	desc, err := osapi.GetFileDescriptionByPath("C:\\Windows\\System32\\notepad.exe")
 func GetFileDescriptionByPath(path string) (desc string, err error) {
 	if path == "" {
 		return "", nil
@@ -157,6 +172,11 @@ func GetFileDescriptionByPath(path string) (desc string, err error) {
 
 	return QueryFileDescription(buf, lang, codepage)
 }
+// QueryFileDescription extracts a file description from version info bytes.
+//
+// Example:
+//
+//	desc, err := osapi.QueryFileDescription(buf, 0x0409, 0x04B0)
 func QueryFileDescription(buf []byte, lang, codepage uint16) (desc string, err error) {
 	subBlock := fmt.Sprintf(`\StringFileInfo\%04x%04x\FileDescription`, lang, codepage)
 
@@ -182,6 +202,11 @@ func QueryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 	desc = windows.UTF16PtrToString((*uint16)(unsafe.Pointer(&buf[int(offset)])))
 	return desc, nil
 }
+// GetMonitorByWindow returns the monitor rectangle for the given window handle.
+//
+// Example:
+//
+//	monitorRect := osapi.GetMonitorByWindow(hwnd)
 func GetMonitorByWindow(hwnd uintptr) RECT {
 	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
 	if r0 == 0 {
@@ -199,6 +224,11 @@ func GetMonitorByWindow(hwnd uintptr) RECT {
 
 	return mi.RcMonitor
 }
+// SetWindowPos wraps the Win32 SetWindowPos call.
+//
+// Example:
+//
+//	ok := osapi.SetWindowPos(hwnd, 0, 0, 0, 1280, 720, osapi.SWP_SHOWWINDOW)
 func SetWindowPos(hwnd uintptr, hwndInsertAfter uintptr, x, y, cx, cy int32, flags uint32) bool {
 	r, _, _ := procSetWindowPos.Call(
 		uintptr(hwnd),

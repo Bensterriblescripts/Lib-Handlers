@@ -146,6 +146,11 @@ func StopKeylogger() {
 		unregisterHotKey(0, uintptr(hotkey.ID))
 	}
 }
+// AddHotkey registers a hotkey definition and callback.
+//
+// Example:
+//
+//	osapi.AddHotkey("control+shift", "k", func() { fmt.Println("pressed") })
 func AddHotkey(mod string, key string, callback func()) {
 	if strings.Contains(mod, "+") {
 		multimods := strings.Split(mod, "+")
@@ -191,6 +196,11 @@ func AddHotkey(mod string, key string, callback func()) {
 	currentHotkeyID++
 }
 
+// registerHotKey wraps the Win32 RegisterHotKey call.
+//
+// Example:
+//
+//	ok := registerHotKey(0, 1, Modifiers["alt"], Keys["f1"])
 func registerHotKey(hwnd uintptr, id uintptr, modifiers uintptr, vk uintptr) bool {
 	r, _, _ := procRegisterHotKey.Call(
 		hwnd,
@@ -200,6 +210,11 @@ func registerHotKey(hwnd uintptr, id uintptr, modifiers uintptr, vk uintptr) boo
 	)
 	return r != 0
 }
+// unregisterHotKey wraps the Win32 UnregisterHotKey call.
+//
+// Example:
+//
+//	ok := unregisterHotKey(0, 1)
 func unregisterHotKey(hwnd uintptr, id uintptr) bool {
 	r, _, _ := procUnregisterHotKey.Call(
 		hwnd,

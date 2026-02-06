@@ -21,6 +21,10 @@ type Guid struct {
 // passing an empty string will create a 0-value guid.String with a false guid.Valid value
 //
 // if the guid passed in is invalid, the resulting guid.Valid will be false
+//
+// Example:
+//
+//	id := guid.New("7d444840-9dc0-11d1-b245-5ffdce74fad2")
 func New(value ...string) Guid {
 	guid := Guid{
 		"00000000-0000-0000-0000-000000000000",
@@ -53,6 +57,10 @@ func New(value ...string) Guid {
 // # Check if a Guid matches a String
 //
 // Note: guid.String can always be compared against another guid.String with == due to the formatting enforced in guid.New()
+//
+// Example:
+//
+//	ok := guid.MatchesString(id, "7d444840-9dc0-11d1-b245-5ffdce74fad2")
 func MatchesString(val Guid, otherval string) bool {
 	if !val.Valid {
 		ErrorLog("First parameter passed into guid.MatchesString is invalid " + val.String)
@@ -66,6 +74,11 @@ func MatchesString(val Guid, otherval string) bool {
 	return strings.EqualFold(val.String, otherval)
 }
 
+// UnmarshalJSON populates the Guid from JSON string data.
+//
+// Example:
+//
+//	err := guidValue.UnmarshalJSON([]byte(`"7d444840-9dc0-11d1-b245-5ffdce74fad2"`))
 func (g *Guid) UnmarshalJSON(b []byte) error { // Automatically called when unmarshalling JSON
 	if bytes.Equal(b, []byte("null")) {
 		*g = Guid{}

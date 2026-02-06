@@ -15,12 +15,22 @@ type FlushWriter struct {
 	F http.Flusher
 }
 
+// Write forwards data to the underlying writer and flushes the response.
+//
+// Example:
+//
+//	_, _ = fw.Write([]byte("ping\n"))
 func (fw FlushWriter) Write(p []byte) (int, error) {
 	n, err := fw.W.Write(p)
 	fw.F.Flush()
 	return n, err
 }
 
+// CreateShellStream executes a command and streams output to the HTTP response.
+//
+// Example:
+//
+//	status := network.CreateShellStream(&w, "ping", "127.0.0.1")
 func CreateShellStream(w *http.ResponseWriter, command string, arg string) string {
 	f, ok := (*w).(http.Flusher)
 	if !ok {
@@ -52,6 +62,11 @@ func CreateShellStream(w *http.ResponseWriter, command string, arg string) strin
 
 	return "Finished"
 }
+// CreateInternalStream returns trace and error writers that stream to the response.
+//
+// Example:
+//
+//	traceOut, errorOut := network.CreateInternalStream(&w)
 func CreateInternalStream(w *http.ResponseWriter) (io.Writer, io.Writer) {
 	f, ok := (*w).(http.Flusher)
 	if !ok {

@@ -11,6 +11,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// SSHTunnel starts a local TCP listener that forwards traffic over SSH.
+//
+// Example:
+//
+//	ln := network.SSHTunnel(client, "127.0.0.1:8080", "127.0.0.1:80")
 func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 	TraceLog("Starting SSH listening tunnel in new thread: " + localAddr + " -> " + remoteAddr)
 	ln := PanicError(net.Listen("tcp", localAddr))
@@ -40,6 +45,11 @@ func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 	TraceLog("SSH Tunnel Created")
 	return ln
 }
+// LoadDefaultPrivateKeys loads a signer from ~/.ssh/id_ed25519 or ~/.ssh/id_rsa.
+//
+// Example:
+//
+//	signer := network.LoadDefaultPrivateKeys()
 func LoadDefaultPrivateKeys() ssh.Signer {
 	var path string
 	home := PanicError(os.UserHomeDir())

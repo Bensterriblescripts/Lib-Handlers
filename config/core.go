@@ -15,7 +15,11 @@ var ConfigPath string
 var Current map[string]string
 var Draft map[string]string
 
-// Read the config file stored in config.ConfigPath
+// Read the config file stored in config.ConfigPath.
+//
+// Example:
+//
+//	settings := config.ReadConfig()
 func ReadConfig() map[string]string {
 	rawconfig := getConfig()
 
@@ -40,6 +44,11 @@ func ReadConfig() map[string]string {
 	Current = out
 	return out
 }
+// getConfig loads the raw config file contents.
+//
+// Example:
+//
+//	raw := getConfig()
 func getConfig() []byte {
 	if ConfigPath == "" {
 		ConfigPath = "C:\\Local\\Config\\" + AppName + ".ini"
@@ -72,7 +81,7 @@ func getConfig() []byte {
 	}
 }
 
-// Write config.Current to the file
+// Write config.Current to the file.
 func Write() {
 	if !overwriteConfig() {
 		ErrorLog("Failed to write the config file")
@@ -81,7 +90,11 @@ func Write() {
 	}
 }
 
-// Write a single setting to the config file
+// Write a single setting to the config file.
+//
+// Example:
+//
+//	config.WriteSetting("username", "alice")
 func WriteSetting(label string, value string) {
 	if label == "" {
 		ErrorLog("Label cannot be an empty string")
@@ -103,7 +116,11 @@ func WriteSetting(label string, value string) {
 	}
 }
 
-// Write a map of settings to the config file (strings only)
+// Write a map of settings to the config file (strings only).
+//
+// Example:
+//
+//	config.WriteSettings(map[string]string{"env": "prod"})
 func WriteSettings(newConfig map[string]string) {
 	if len(newConfig) == 0 {
 		return
@@ -119,6 +136,11 @@ func WriteSettings(newConfig map[string]string) {
 		TraceLog("Wrote to the config file")
 	}
 }
+// overwriteConfig writes the current in-memory settings to disk.
+//
+// Example:
+//
+//	ok := overwriteConfig()
 func overwriteConfig() bool {
 	if !osapi.EnsurePath(ConfigPath) {
 		ErrorLog("Failed to create the config directory")
