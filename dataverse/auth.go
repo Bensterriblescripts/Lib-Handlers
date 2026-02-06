@@ -46,6 +46,10 @@ var CurrentAccessExpires int
 // - Optional (Default = true): dataverse.VerboseLogging (Bool, Verbose Logging)
 //
 // Returns the current access token, as well as storing it in dataverse.CurrentAccessToken
+//
+// Example:
+//
+//	token := dataverse.Authenticate()
 func Authenticate() Token {
 	TraceLog("Retrieving access token...")
 
@@ -69,6 +73,10 @@ func Authenticate() Token {
 // If empty or not valid, it will attempt to retrieve a new one.
 //
 // Returns true if valid or reauthenticated. False if not.
+//
+// Example:
+//
+//	ok := dataverse.IsAuthenticated()
 func IsAuthenticated() bool {
 	if CurrentAccessToken == (Token{}) {
 		TraceLog("Dataverse access token was not set")
@@ -92,6 +100,10 @@ func IsAuthenticated() bool {
 // If empty or not valid, it will attempt to retrieve a new one.
 //
 // Returns true if valid or reauthenticated. False if not.
+//
+// Example:
+//
+//	ok := dataverse.EnsureAuthenticated()
 func EnsureAuthenticated() bool {
 	if !IsAuthenticated() {
 		Authenticate()
@@ -106,6 +118,11 @@ func EnsureAuthenticated() bool {
 	return true
 }
 
+// getAccessToken requests a new OAuth access token from Azure.
+//
+// Example:
+//
+//	token := getAccessToken()
 func getAccessToken() Token {
 	var token Token
 	tokenurl := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", TenantID.String)

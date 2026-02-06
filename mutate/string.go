@@ -6,7 +6,11 @@ import (
 	"unicode/utf8"
 )
 
-// Capitalise a UTF-8 String
+// Capitalise a UTF-8 String.
+//
+// Example:
+//
+//	title := mutate.Capitalise("hello")
 func Capitalise(s string) string {
 	if s == "" {
 		return s

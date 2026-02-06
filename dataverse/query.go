@@ -16,9 +16,13 @@ import (
 var AllowAnnotations bool = true
 var MaxPageSize = 5000 // Set to 0 to use dataverse defaults
 
-// Retrieve records using your own query
+// Retrieve records using your own query.
 //
-// Automatically appends ? if missing
+// Automatically appends ? if missing.
+//
+// Example:
+//
+//	body := dataverse.Query("GET", "contacts", "$select=fullname")
 func Query(method string, table string, query string) []byte {
 	if table == "" {
 		ErrorLog("Empty table found when trying to query dataverse")
@@ -44,8 +48,11 @@ func Query(method string, table string, query string) []byte {
 	return sendRequest(url, method, nil)
 }
 
-// Retrieve records by parameter/s
-// E.g. dataverse.Request("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1", "lastname asc") -> []byte JSON
+// Retrieve records by parameter/s.
+//
+// Example:
+//
+//	body := dataverse.Retrieve("contacts", "idnumber eq 1234567890", "fullname,lastname,emailaddress1", "lastname asc")
 func Retrieve(table, filter, returnValues string, order ...string) []byte {
 	base := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 
@@ -70,14 +77,20 @@ func Retrieve(table, filter, returnValues string, order ...string) []byte {
 	}
 }
 
-// Retrieve the next page of results
-// E.g. dataverse.RetrieveNext(nextLink) -> []byte JSON
+// Retrieve the next page of results.
+//
+// Example:
+//
+//	body := dataverse.RetrieveNext(nextLink)
 func RetrieveNext(nextLink string) []byte {
 	return sendRequest(nextLink, "GET", nil)
 }
 
-// Retrieve record by primary key
-// E.g. dataverse.Retrieve("contacts", "1234567890", "fullname,lastname,emailaddress1") -> []byte JSON
+// Retrieve record by primary key.
+//
+// Example:
+//
+//	body := dataverse.RetrieveByID("contacts", "1234567890", "fullname,lastname,emailaddress1")
 func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 	base := fmt.Sprintf("%s/api/data/v9.2/%s(%s)", Endpoint, table, primaryKey)
 
@@ -102,7 +115,10 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 //			Author       string `json:"cr244_author"`
 //	}
 //
-// E.g. dataverse.Create("contacts", jsondata) -> bool
+//
+// Example:
+//
+//	ok := dataverse.Create("contacts", map[string]interface{}{"fullname": "Ada Lovelace"})
 func Create(table string, createData map[string]interface{}) bool {
 	if table == "" {
 		ErrorLog("Empty table found when trying to create record")
@@ -129,8 +145,9 @@ func Create(table string, createData map[string]interface{}) bool {
 //
 // Data should be a map[string (column name)]interface{}("new value")
 //
-// E.g. Update("contacts", "000000-000-0000-000000", map[string]interface{}{"mito_totarasync": nil})
-// Or create the map first | newData := map[string]interface{} | and append it
+// Example:
+//
+//	ok := dataverse.Update("contacts", "000000-000-0000-000000", map[string]interface{}{"mito_totarasync": nil})
 func Update(table string, recordid string, updateData map[string]interface{}) bool {
 	if table == "" || updateData == nil || recordid == "" {
 		ErrorLog("Empty parameter during update")
@@ -158,6 +175,11 @@ func Update(table string, recordid string, updateData map[string]interface{}) bo
 	}
 }
 
+// sendRequest issues a request to the Dataverse API.
+//
+// Example:
+//
+//	body := sendRequest(url, "GET", nil)
 func sendRequest(url string, method string, data []byte) []byte {
 	if !EnsureAuthenticated() {
 		ErrorLog("Failed to validate access token")

@@ -9,6 +9,11 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
+// Run executes a PowerShell command and returns its output and success status.
+//
+// Example:
+//
+//	out, ok := osapi.Run("Get-Date")
 func Run(command string) (string, bool) {
 	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // No powershell window
@@ -19,6 +24,11 @@ func Run(command string) (string, bool) {
 	}
 	return string(out), true
 }
+// EnsurePath creates all directories needed for the given path.
+//
+// Example:
+//
+//	ok := osapi.EnsurePath("C:\\Local\\Config\\app.ini")
 func EnsurePath(path string) bool {
 	if ErrExists(os.MkdirAll(filepath.Dir(path), 0755)) {
 		ErrorLog("Failed to create directory: " + path)
@@ -26,6 +36,11 @@ func EnsurePath(path string) bool {
 	}
 	return true
 }
+// GetFileSize returns the file size in bytes.
+//
+// Example:
+//
+//	size := osapi.GetFileSize("C:\\Local\\Config\\app.ini")
 func GetFileSize(path string) int64 {
 	if info, err := os.Stat(path); err != nil {
 		ErrorLog("Failed to get file size")
@@ -39,6 +54,11 @@ func GetFileSize(path string) int64 {
 		return info.Size()
 	}
 }
+// AddToLocalSoftware copies the current executable to C:\\Local\\Software.
+//
+// Example:
+//
+//	ok := osapi.AddToLocalSoftware()
 func AddToLocalSoftware() bool {
 	if currentExe, err := os.Executable(); err == nil {
 		if currentExe == "C:\\Local\\Software\\"+AppName+".exe" {

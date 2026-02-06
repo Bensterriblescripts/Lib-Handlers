@@ -7,6 +7,11 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
+// BenchmarkFunctions compares two functions over a number of iterations.
+//
+// Example:
+//
+//	test.BenchmarkFunctions(fnA, fnB, 1000)
 func BenchmarkFunctions(function1 func(), function2 func(), iterations int) {
 	startFunction1 := time.Now()
 	for x := 0; x < iterations; x++ {
@@ -32,6 +37,11 @@ func BenchmarkFunctions(function1 func(), function2 func(), iterations int) {
 		durationFunction2.Seconds(), function2Milli,
 	))
 }
+// BenchmarkFunction measures a single function over a number of iterations.
+//
+// Example:
+//
+//	test.BenchmarkFunction(fn, 1000)
 func BenchmarkFunction(function func(), iterations int) {
 	startFunction := time.Now()
 	for x := 0; x < iterations; x++ {

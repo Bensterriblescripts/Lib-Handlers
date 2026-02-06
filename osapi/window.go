@@ -11,6 +11,11 @@ import (
 
 var activeWindows []Window
 
+// GetWindowByTitle finds the handle of the first window with a matching title.
+//
+// Example:
+//
+//	hwnd := osapi.GetWindowByTitle("Untitled - Notepad")
 func GetWindowByTitle(title string) uintptr {
 	t, err := windows.UTF16PtrFromString(title)
 	if err != nil {
@@ -23,6 +28,11 @@ func GetWindowByTitle(title string) uintptr {
 
 	return r
 }
+// GetWindowTitle retrieves the title for the provided window handle.
+//
+// Example:
+//
+//	title := osapi.GetWindowTitle(hwnd)
 func GetWindowTitle(hwnd uintptr) string {
 	ret, _, callErr := procGetWindowTextLength.Call(hwnd)
 	length := uint32(ret)
@@ -45,6 +55,11 @@ func GetWindowTitle(hwnd uintptr) string {
 
 	return windows.UTF16ToString(buf)
 }
+// GetAllActiveWindows returns a snapshot of visible windows.
+//
+// Example:
+//
+//	windows := osapi.GetAllActiveWindows()
 func GetAllActiveWindows() []Window {
 	TraceLog("GetAllActiveWindows started")
 	activeWindows = make([]Window, 0)
@@ -68,6 +83,11 @@ func GetAllActiveWindows() []Window {
 	return activeWindows
 }
 
+// GetWindowState returns the current window state (Fullscreen, Borderless, Windowed).
+//
+// Example:
+//
+//	state := osapi.GetWindowState(hwnd)
 func GetWindowState(hwnd uintptr) string {
 	styleIndex := int32(GWL_STYLE)
 	style, _, _ := procGetWindowLongW.Call(hwnd, uintptr(styleIndex))
@@ -79,6 +99,11 @@ func GetWindowState(hwnd uintptr) string {
 		return "Windowed"
 	}
 }
+// GetWindowRect returns the bounding rectangle for a window.
+//
+// Example:
+//
+//	rect := osapi.GetWindowRect(hwnd)
 func GetWindowRect(hwnd uintptr) RECT {
 	var rect RECT
 	r, _, _ := procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&rect)), uintptr(unsafe.Sizeof(rect)))
@@ -90,6 +115,11 @@ func GetWindowRect(hwnd uintptr) RECT {
 }
 
 /* Alter Window State and Focus */
+// SetBorderlessWindow updates a window to borderless fullscreen.
+//
+// Example:
+//
+//	osapi.SetBorderlessWindow(hwnd)
 func SetBorderlessWindow(hwnd uintptr) {
 	var window *Window
 	for activeWindowIndex, activeWindow := range activeWindows {
@@ -154,6 +184,11 @@ func SetBorderlessWindow(hwnd uintptr) {
 	window.WindowState = "Borderless"
 	SetVisible(hwnd)
 }
+// SetWindowWindowed restores a window to its original bounds.
+//
+// Example:
+//
+//	osapi.SetWindowWindowed(hwnd)
 func SetWindowWindowed(hwnd uintptr) {
 	var window *Window
 	for activeWindowIndex, activeWindow := range activeWindows {
@@ -199,6 +234,11 @@ func SetWindowWindowed(hwnd uintptr) {
 	window.WindowState = "Windowed"
 	SetVisible(hwnd)
 }
+// SetWindowMinimised minimises the window.
+//
+// Example:
+//
+//	osapi.SetWindowMinimised(hwnd)
 func SetWindowMinimised(hwnd uintptr) {
 	if hwnd == 0 {
 		ErrorLog("Passed in an empty pointer, did not minimise window")
@@ -231,6 +271,11 @@ func SetWindowMinimised(hwnd uintptr) {
 
 	window.WindowState = "Minimised"
 }
+// SetFocus brings the window to the foreground and focuses it.
+//
+// Example:
+//
+//	osapi.SetFocus(hwnd)
 func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from other windows
 	if hwnd == 0 {
 		ErrorLog("SetFocus: window handle is null")
@@ -249,6 +294,11 @@ func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from othe
 		return
 	}
 }
+// SetVisible restores a window without stealing focus.
+//
+// Example:
+//
+//	osapi.SetVisible(hwnd)
 func SetVisible(hwnd uintptr) { // Less aggressive than SetFocus, will open if minimised/tray
 	procShowWindow.Call(hwnd, SW_RESTORE)
 }

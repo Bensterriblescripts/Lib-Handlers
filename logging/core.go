@@ -67,7 +67,11 @@ func initVars() {
 	}
 }
 
-// Initialize the error log file, the file will be closed and reopened if it already exists
+// Initialize the error log file, the file will be closed and reopened if it already exists.
+//
+// Example:
+//
+//	logging.InitErrorLog("C:\\Local\\Logs\\app\\errors.log")
 //
 // Sets ErrorLogFile
 func InitErrorLog(filename string) {
@@ -84,7 +88,11 @@ func InitErrorLog(filename string) {
 	}
 }
 
-// Initialize the change log file, the file will be closed and reopened if it already exists
+// Initialize the change log file, the file will be closed and reopened if it already exists.
+//
+// Example:
+//
+//	logging.InitChangeLog("C:\\Local\\Logs\\app\\changes.log")
 //
 // Sets ChangeLogFile
 func InitChangeLog(filename string) {
@@ -102,7 +110,11 @@ func InitChangeLog(filename string) {
 	}
 }
 
-// Initialize the trace log file, the trace log will not be written to if TraceDebug is manually set to false
+// Initialize the trace log file, the trace log will not be written to if TraceDebug is manually set to false.
+//
+// Example:
+//
+//	logging.InitTraceLog("C:\\Local\\Logs\\app\\trace.log")
 //
 // Sets TraceLogFile
 func InitTraceLog(filename string) {
@@ -123,7 +135,11 @@ func InitTraceLog(filename string) {
 	}
 }
 
-// Alter the current log folder path
+// Alter the current log folder path.
+//
+// Example:
+//
+//	logging.SetLogsFolder("session-2024-01-01")
 //
 // The new logs folder will sit under AppName/StringPassedIn
 func SetLogsFolder(foldername string) {
@@ -164,7 +180,11 @@ func SetLogsFolder(foldername string) {
 	}
 }
 
-// Write to the error log and stdout if ConsoleLogging is set to true
+// Write to the error log and stdout if ConsoleLogging is set to true.
+//
+// Example:
+//
+//	logging.ErrorLog("failed to connect to db")
 func ErrorLog(message string) {
 	if ErrorLogFile == nil {
 		currentday := GetDay()
@@ -178,7 +198,11 @@ func ErrorLog(message string) {
 	PrintLogs(message, 0)
 }
 
-// Write to the change log and stdout if ConsoleLogging is set to true
+// Write to the change log and stdout if ConsoleLogging is set to true.
+//
+// Example:
+//
+//	logging.ChangeLog("updated user profile", "user-123")
 func ChangeLog(message string, idnumber string) {
 	if ChangeLogFile == nil {
 		currentday := GetDay()
@@ -195,7 +219,11 @@ func ChangeLog(message string, idnumber string) {
 	PrintLogs(message, 1)
 }
 
-// Write to the trace log and stdout if ConsoleLogging is set to true
+// Write to the trace log and stdout if ConsoleLogging is set to true.
+//
+// Example:
+//
+//	logging.TraceLog("starting background job")
 func TraceLog(message string) {
 	if !TraceDebug {
 		return
@@ -210,6 +238,11 @@ func TraceLog(message string) {
 	message = RetrieveLatestCaller(message)
 	PrintLogs(message, 2)
 }
+// RetrieveLatestCaller formats a log message with caller details.
+//
+// Example:
+//
+//	withCaller := logging.RetrieveLatestCaller("starting worker")
 func RetrieveLatestCaller(message string) string {
 	pc, _, callerline, ok := runtime.Caller(1)
 	if !ok {
@@ -234,6 +267,11 @@ func RetrieveLatestCaller(message string) string {
 	return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", caller3[0], caller3[1], callerline3), message)
 }
 
+// PrintLogs writes the message to the requested log stream.
+//
+// Example:
+//
+//	logging.PrintLogs("system online", 2)
 func PrintLogs(message string, errorlevel int) {
 	switch errorlevel {
 	case 0:
@@ -284,6 +322,11 @@ func RotateLogs(logFolder string) {
 		}
 	}
 }
+// clearOutdatedLogs removes logs older than the provided retention window.
+//
+// Example:
+//
+//	clearOutdatedLogs("C:\\Local\\Logs\\app\\trace-2024-1-1.log", "2024", "1", "1", 3)
 func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth string, logStringDay string, daysToKeep int) {
 	if logStringYear == "" {
 		ErrorLog("Log file error, year is empty: " + fullPath)
@@ -330,6 +373,11 @@ func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 		}
 	}
 }
+// RemoveLog deletes the log file at the provided path.
+//
+// Example:
+//
+//	logging.RemoveLog("C:\\Local\\Logs\\app\\trace-2024-1-1.log")
 func RemoveLog(fullPath string) {
 	TraceLog("Removing log file: " + fullPath)
 	PrintErr(os.Remove(fullPath))

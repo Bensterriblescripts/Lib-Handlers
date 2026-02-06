@@ -4,6 +4,11 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
+// RunExeAtLogon registers an executable to run at user logon.
+//
+// Example:
+//
+//	ok := osapi.RunExeAtLogon("MyApp", "C:\\Local\\Software\\MyApp.exe")
 func RunExeAtLogon(name string, path string) bool {
 	out, success := Run(`
 		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "` + name + `" -Value '"` + path + `"' -PropertyType String -Force
