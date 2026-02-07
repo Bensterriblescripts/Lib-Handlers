@@ -1,6 +1,8 @@
 package osapi
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,13 +17,18 @@ import (
 //	out, ok := osapi.Run("Get-Date")
 func Run(command string) (string, bool) {
 	cmd := exec.Command("bash", "-c", command)
+	var stdOutBuf bytes.Buffer
+	var stdErrBuf bytes.Buffer
+	cmd.Stdout = io.MultiWriter(&stdOutBuf, os.Stdout, TraceLogFile)
+	cmd.Stderr = io.MultiWriter(&stdErrBuf, os.Stderr, TraceLogFile)
 
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(out), false
+	if ErrExists(cmd.Run()) {
+		ErrorLog("Failed to run command: " + command)
+		return stdErrBuf.String(), false
 	}
-	return string(out), true
+	return stdOutBuf.String(), true
 }
+
 // EnsurePath creates all directories needed for the given path.
 //
 // Example:
@@ -34,6 +41,7 @@ func EnsurePath(path string) bool {
 	}
 	return true
 }
+
 // GetFileSize returns the file size in bytes.
 //
 // Example:
@@ -52,6 +60,7 @@ func GetFileSize(path string) int64 {
 		return info.Size()
 	}
 }
+
 // AddToLocalSoftware copies the current executable to C:\\Local\\Software.
 //
 // Example:
