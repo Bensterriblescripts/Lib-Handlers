@@ -16,6 +16,7 @@ import (
 // Example:
 //
 //	ln := network.SSHTunnel(client, "127.0.0.1:8080", "127.0.0.1:80")
+//	defer ln.Close()
 func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 	TraceLog("Starting SSH listening tunnel in new thread: " + localAddr + " -> " + remoteAddr)
 	ln := PanicError(net.Listen("tcp", localAddr))

@@ -72,6 +72,7 @@ func initVars() {
 // Example:
 //
 //	logging.InitErrorLog("C:\\Local\\Logs\\app\\errors.log")
+//	defer logging.ErrorLogFile.Close()
 //
 // Sets ErrorLogFile
 func InitErrorLog(filename string) {
@@ -93,6 +94,7 @@ func InitErrorLog(filename string) {
 // Example:
 //
 //	logging.InitChangeLog("C:\\Local\\Logs\\app\\changes.log")
+//	defer logging.ChangeLogFile.Close()
 //
 // Sets ChangeLogFile
 func InitChangeLog(filename string) {
@@ -115,6 +117,7 @@ func InitChangeLog(filename string) {
 // Example:
 //
 //	logging.InitTraceLog("C:\\Local\\Logs\\app\\trace.log")
+//	defer logging.TraceLogFile.Close()
 //
 // Sets TraceLogFile
 func InitTraceLog(filename string) {
