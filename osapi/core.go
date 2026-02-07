@@ -1,11 +1,11 @@
 package osapi
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -19,15 +19,16 @@ import (
 func PowerShell(command string) (string, bool) {
 	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true} // No window
-	var stdout, stderr strings.Builder
-
-	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout, TraceLogFile)
-	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr, ErrorLogFile)
+	var stdOutBuf bytes.Buffer
+	var stdErrBuf bytes.Buffer
+	cmd.Stdout = io.MultiWriter(&stdOutBuf, os.Stdout, TraceLogFile)
+	cmd.Stderr = io.MultiWriter(&stdErrBuf, os.Stderr, TraceLogFile)
 
 	if ErrExists(cmd.Run()) {
-		return stderr.String(), false
+		ErrorLog("Failed to run command: " + command)
+		return stdErrBuf.String(), false
 	} else {
-		return stdout.String(), true
+		return stdOutBuf.String(), true
 	}
 }
 

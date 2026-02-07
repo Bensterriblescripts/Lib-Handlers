@@ -44,8 +44,8 @@ func Query(method string, table string, query string) []byte {
 		query = "?" + query
 	}
 
-	url := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
-	return sendRequest(url, method, nil)
+	queryurl := fmt.Sprintf("%s/api/data/v9.2/%s%s", Endpoint, table, query)
+	return sendRequest(queryurl, method, nil)
 }
 
 // Retrieve records by parameter/s.
@@ -115,7 +115,6 @@ func RetrieveByID(table string, primaryKey string, returnValues string) []byte {
 //			Author       string `json:"cr244_author"`
 //	}
 //
-//
 // Example:
 //
 //	ok := dataverse.Create("contacts", map[string]interface{}{"fullname": "Ada Lovelace"})
@@ -128,13 +127,13 @@ func Create(table string, createData map[string]interface{}) bool {
 		ErrorLog("Empty data found when trying to create record")
 		return false
 	}
-	url := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
+	createurl := fmt.Sprintf("%s/api/data/v9.2/%s", Endpoint, table)
 	if jsonData, err := ErrorExists(json.Marshal(createData)); err {
 		ErrorLog("Failed to marshal create data: " + string(jsonData))
 		return false
 	} else {
-		if response := sendRequest(url, "POST", jsonData); response == nil {
-			ErrorLog("Failed to create record: " + url)
+		if response := sendRequest(createurl, "POST", jsonData); response == nil {
+			ErrorLog("Failed to create record: " + createurl)
 			return false
 		}
 	}
@@ -209,10 +208,15 @@ func sendRequest(url string, method string, data []byte) []byte {
 
 		client := &http.Client{}
 		if resp, err := ErrorExists(client.Do(req)); err { // Send request
+			if resp.Body != nil {
+				defer WrapErr(resp.Body.Close)
+			} else {
+				ErrorLog("Response body is empty")
+			}
 			ErrorLog("CRM Request Failed: " + url)
 			return nil
 		} else {
-			defer resp.Body.Close()
+			defer WrapErr(resp.Body.Close)
 
 			if VerboseLogging {
 				TraceLog("Sending request...  " + url + " HTTP Status: " + strconv.Itoa(resp.StatusCode))

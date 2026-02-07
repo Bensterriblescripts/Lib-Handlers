@@ -100,7 +100,7 @@ func ErrorExists[T any](value T, err error) (T, bool) {
 //	}
 func WrapErr(fn func() error) {
 	if ErrExists(fn()) {
-		ErrorLog("Error During Defer, Continuing...")
+		ErrorLog("Error incurred during defer, continuing...")
 	}
 }
 
@@ -111,7 +111,7 @@ func WrapErr(fn func() error) {
 //	}
 func WrapPanic(fn func() error) {
 	if ErrExists(fn()) {
-		Panic("Error During Defer, Exiting...")
+		Panic("Error incurred during defer, panic exiting...")
 	}
 }
 

@@ -98,6 +98,7 @@ func UploadFile(path string, purpose string) []byte {
 
 	return response
 }
+
 // UseUploadedFile fetches and structures contents for an existing file ID.
 //
 // Example:
@@ -137,11 +138,13 @@ func handleFileUpload(path string, purpose string) string {
 
 	var file *os.File
 	if file, err = ErrorExists(os.Open(path)); err {
+		if file != nil {
+			defer WrapErr(file.Close)
+		}
 		ErrorLog("Error opening file: " + path)
 		return ""
-	} else {
-		defer WrapErr(file.Close)
 	}
+	defer WrapErr(file.Close)
 
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
@@ -177,10 +180,12 @@ func handleFileUpload(path string, purpose string) string {
 	var client = &http.Client{Timeout: 60 * time.Second}
 	var resp *http.Response
 	if resp, err = ErrorExists(client.Do(req)); err {
+		if resp.Body != nil {
+			defer WrapErr(resp.Body.Close)
+		} else {
+			ErrorLog("Response body is empty")
+		}
 		ErrorLog("Error executing request")
-		return ""
-	} else if resp == nil {
-		ErrorLog("No response from the server")
 		return ""
 	}
 	defer WrapErr(resp.Body.Close)
@@ -198,6 +203,7 @@ func handleFileUpload(path string, purpose string) string {
 		return response.ID
 	}
 }
+
 // GetContents requests a structured table of contents for a file.
 //
 // Example:
@@ -232,6 +238,7 @@ func GetContents(fileid string) []byte {
 	}
 	return response
 }
+
 // StructureContents validates and normalizes a table of contents response.
 //
 // Example:
@@ -345,10 +352,12 @@ func SendRequest(textprompts []PromptMessage, model string) []byte {
 	TraceLog("Sending request: " + string(bodyBytes))
 	var resp *http.Response
 	if resp, err = ErrorExists(client.Do(req)); err {
+		if resp.Body != nil {
+			defer WrapErr(resp.Body.Close)
+		} else {
+			ErrorLog("Response body is empty")
+		}
 		ErrorLog("Error executing request " + string(bodyBytes))
-		return nil
-	} else if resp == nil {
-		ErrorLog("No response from the server " + string(bodyBytes))
 		return nil
 	}
 	defer WrapErr(resp.Body.Close)

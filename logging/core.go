@@ -72,13 +72,14 @@ func initVars() {
 // Example:
 //
 //	logging.InitErrorLog("C:\\Local\\Logs\\app\\errors.log")
+//	defer logging.ErrorLogFile.Close()
 //
 // Sets ErrorLogFile
 func InitErrorLog(filename string) {
 	if ErrorLogFile == nil {
 		ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	} else {
-		ErrorLogFile.Close()
+		PrintErr(ErrorLogFile.Close())
 		ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	}
 	if ConsoleLogging {
@@ -93,13 +94,14 @@ func InitErrorLog(filename string) {
 // Example:
 //
 //	logging.InitChangeLog("C:\\Local\\Logs\\app\\changes.log")
+//	defer logging.ChangeLogFile.Close()
 //
 // Sets ChangeLogFile
 func InitChangeLog(filename string) {
 	if ChangeLogFile == nil {
 		ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	} else {
-		ChangeLogFile.Close()
+		PrintErr(ChangeLogFile.Close())
 		ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	}
 
@@ -115,6 +117,7 @@ func InitChangeLog(filename string) {
 // Example:
 //
 //	logging.InitTraceLog("C:\\Local\\Logs\\app\\trace.log")
+//	defer logging.TraceLogFile.Close()
 //
 // Sets TraceLogFile
 func InitTraceLog(filename string) {
@@ -124,7 +127,7 @@ func InitTraceLog(filename string) {
 	if TraceLogFile == nil {
 		TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	} else {
-		TraceLogFile.Close()
+		PrintErr(TraceLogFile.Close())
 		TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	}
 
@@ -238,6 +241,7 @@ func TraceLog(message string) {
 	message = RetrieveLatestCaller(message)
 	PrintLogs(message, 2)
 }
+
 // RetrieveLatestCaller formats a log message with caller details.
 //
 // Example:
@@ -322,6 +326,7 @@ func RotateLogs(logFolder string) {
 		}
 	}
 }
+
 // clearOutdatedLogs removes logs older than the provided retention window.
 //
 // Example:
@@ -373,6 +378,7 @@ func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 		}
 	}
 }
+
 // RemoveLog deletes the log file at the provided path.
 //
 // Example:

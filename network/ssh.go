@@ -16,6 +16,7 @@ import (
 // Example:
 //
 //	ln := network.SSHTunnel(client, "127.0.0.1:8080", "127.0.0.1:80")
+//	defer ln.Close()
 func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 	TraceLog("Starting SSH listening tunnel in new thread: " + localAddr + " -> " + remoteAddr)
 	ln := PanicError(net.Listen("tcp", localAddr))
@@ -45,6 +46,7 @@ func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 	TraceLog("SSH Tunnel Created")
 	return ln
 }
+
 // LoadDefaultPrivateKeys loads a signer from ~/.ssh/id_ed25519 or ~/.ssh/id_rsa.
 //
 // Example:
@@ -64,9 +66,20 @@ func LoadDefaultPrivateKeys() ssh.Signer {
 		}
 	}
 	if path == "" {
-		Panic("No SSH private key found.")
+		TraceLog("No SSH private key found.")
+		return nil
 	}
 
-	key := PanicError(os.ReadFile(path))
-	return PanicError(ssh.ParsePrivateKey(key))
+	if key, errexists := ErrorExists(os.ReadFile(path)); errexists {
+		ErrorLog("Failed to read SSH private key")
+		return nil
+	} else {
+		if signer, errexists := ErrorExists(ssh.ParsePrivateKey(key)); errexists {
+			ErrorLog("Failed to parse SSH private key")
+			return nil
+		} else {
+			TraceLog("Found and loaded SSH private keys")
+			return signer
+		}
+	}
 }
