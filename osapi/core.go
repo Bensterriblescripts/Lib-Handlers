@@ -1,11 +1,11 @@
 package osapi
 
 import (
-	"bytes"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
@@ -15,18 +15,18 @@ import (
 // Example:
 //
 //	out, ok := osapi.Run("Get-Date")
-func Run(command string) (string, bool) {
+func Bash(command string) (string, bool) {
 	cmd := exec.Command("bash", "-c", command)
-	var stdOutBuf bytes.Buffer
-	var stdErrBuf bytes.Buffer
-	cmd.Stdout = io.MultiWriter(&stdOutBuf, os.Stdout, TraceLogFile)
-	cmd.Stderr = io.MultiWriter(&stdErrBuf, os.Stderr, TraceLogFile)
+	var stdOut strings.Builder
+	var stdErr strings.Builder
+	cmd.Stdout = io.MultiWriter(&stdOut, os.Stdout, TraceLogFile)
+	cmd.Stderr = io.MultiWriter(&stdErr, os.Stderr, TraceLogFile)
 
 	if ErrExists(cmd.Run()) {
 		ErrorLog("Failed to run command: " + command)
-		return stdErrBuf.String(), false
+		return stdErr.String(), false
 	}
-	return stdOutBuf.String(), true
+	return stdOut.String(), true
 }
 
 // EnsurePath creates all directories needed for the given path.
@@ -85,7 +85,7 @@ func AddToLocalSoftware() bool {
 			return false
 		}
 
-		out, success := Run(`Copy-Item -Path ` + currentExe + ` -Destination "C:\Local\Software\` + AppName + `.exe" -Force`)
+		out, success := Bash(`Copy-Item -Path ` + currentExe + ` -Destination "C:\Local\Software\` + AppName + `.exe" -Force`)
 		if !success {
 			ErrorLog("Failed to copy self to software: " + out)
 			return false

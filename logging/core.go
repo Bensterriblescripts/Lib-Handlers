@@ -13,9 +13,9 @@ import (
 	. "github.com/Bensterriblescripts/Lib-Handlers/time"
 )
 
-var errorLogWriter io.Writer
-var changeLogWriter io.Writer
-var traceLogWriter io.Writer
+var ErrorLogWriter io.Writer
+var ChangeLogWriter io.Writer
+var TraceLogWriter io.Writer
 
 // Initialize all logging files and variables
 //
@@ -83,9 +83,9 @@ func InitErrorLog(filename string) {
 		ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	}
 	if ConsoleLogging {
-		errorLogWriter = io.MultiWriter(os.Stdout, ErrorLogFile)
+		ErrorLogWriter = io.MultiWriter(os.Stdout, ErrorLogFile)
 	} else {
-		errorLogWriter = ErrorLogFile
+		ErrorLogWriter = ErrorLogFile
 	}
 }
 
@@ -106,9 +106,9 @@ func InitChangeLog(filename string) {
 	}
 
 	if ConsoleLogging {
-		changeLogWriter = io.MultiWriter(os.Stdout, ChangeLogFile)
+		ChangeLogWriter = io.MultiWriter(os.Stdout, ChangeLogFile)
 	} else {
-		changeLogWriter = ChangeLogFile
+		ChangeLogWriter = ChangeLogFile
 	}
 }
 
@@ -132,9 +132,9 @@ func InitTraceLog(filename string) {
 	}
 
 	if ConsoleLogging {
-		traceLogWriter = io.MultiWriter(os.Stdout, TraceLogFile)
+		TraceLogWriter = io.MultiWriter(os.Stdout, TraceLogFile)
 	} else {
-		traceLogWriter = TraceLogFile
+		TraceLogWriter = TraceLogFile
 	}
 }
 
@@ -279,11 +279,11 @@ func RetrieveLatestCaller(message string) string {
 func PrintLogs(message string, errorlevel int) {
 	switch errorlevel {
 	case 0:
-		PanicError(fmt.Fprintln(errorLogWriter, message))
+		PanicError(fmt.Fprintln(ErrorLogWriter, message))
 	case 1:
-		PanicError(fmt.Fprintln(changeLogWriter, message))
+		PanicError(fmt.Fprintln(ChangeLogWriter, message))
 	case 2:
-		PanicError(fmt.Fprintln(traceLogWriter, message))
+		PanicError(fmt.Fprintln(TraceLogWriter, message))
 	}
 }
 
