@@ -361,14 +361,6 @@ func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 	currentMonth := currentDateArray[1]
 	currentYear := currentDateArray[2]
 
-	logCurrentDay := strconv.Itoa(currentDay)
-	logCurrentMonth := strconv.Itoa(currentMonth)
-	logCurrentYear := strconv.Itoa(currentYear)
-
-	TraceLog("Log File: " + fullPath)
-	TraceLog("File Day: " + logStringDay + ", File Month: " + logStringMonth + ", File Year: " + logStringYear)
-	TraceLog("Current Day: " + logCurrentDay + ", Current Month: " + logCurrentMonth + ", Current Year: " + logCurrentYear)
-
 	if logDay > daysToKeep { // If our days don't go back to the previous month
 		if logYear != currentYear || logMonth != currentMonth {
 			RemoveLog(fullPath)

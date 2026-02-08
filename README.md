@@ -47,9 +47,21 @@ import "github.com/Bensterriblescripts/Lib-Handlers/logging"
 func main() {
     logging.AppName = "MyApp"
     logging.InitLogs()
-    defer logging.ErrorLogFile.Close()
-    defer logging.ChangeLogFile.Close()
-    defer logging.TraceLogFile.Close()
+    defer func() {
+        if r := recover(); r != nil {
+			Panic(r.(string))
+		}
+        if ChangeLogFile != nil {
+			PrintErr(ChangeLogFile.Close())
+		}
+		if TraceLogFile != nil {
+			TraceLog("Clean Shutdown")
+			PrintErr(TraceLogFile.Close())
+		}
+		if ErrorLogFile != nil {
+			PrintErr(ErrorLogFile.Close())
+		}
+	}()
 }
 ```
 
