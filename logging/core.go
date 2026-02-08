@@ -335,39 +335,38 @@ func RotateLogs(logFolder string) {
 func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth string, logStringDay string, daysToKeep int) {
 	if logStringYear == "" {
 		ErrorLog("Log file error, year is empty: " + fullPath)
+		return
 	}
 	if logStringMonth == "" {
 		ErrorLog("Log file error, month is empty: " + fullPath)
+		return
 	}
 	if logStringDay == "" {
 		ErrorLog("Log file error, day is empty: " + fullPath)
+		return
 	}
 	logStringDay = strings.Replace(logStringDay, ".log", "", 1)
-	logDay, err := ErrorExists(strconv.Atoi(logStringDay))
-	if err {
+	logDay, errDay := ErrorExists(strconv.Atoi(logStringDay))
+	if errDay {
 		ErrorLog("Log file error, day is not a number: " + fullPath)
+		return
 	}
-	logMonth, err := ErrorExists(strconv.Atoi(logStringMonth))
-	if err {
+	logMonth, errMonth := ErrorExists(strconv.Atoi(logStringMonth))
+	if errMonth {
 		ErrorLog("Log file error, month is not a number: " + fullPath)
+		return
 	}
-	logYear, err := ErrorExists(strconv.Atoi(logStringYear))
-	if err {
+	logYear, errYear := ErrorExists(strconv.Atoi(logStringYear))
+	if errYear {
 		ErrorLog("Log file error, year is not a number: " + fullPath)
+		return
 	}
 
-	currentDateArray := GetDateArray()
-	currentDay := currentDateArray[0]
-	currentMonth := currentDateArray[1]
-	currentYear := currentDateArray[2]
+	logDate := time.Date(logYear, time.Month(logMonth), logDay, 0, 0, 0, 0, time.UTC)
+	cutoff := time.Now().UTC().Truncate(24*time.Hour).AddDate(0, 0, -daysToKeep)
 
-	if logDay > daysToKeep { // If our days don't go back to the previous month
-		if logYear != currentYear || logMonth != currentMonth {
-			RemoveLog(fullPath)
-		}
-		if logDay < currentDay-daysToKeep {
-			RemoveLog(fullPath)
-		}
+	if logDate.Before(cutoff) {
+		RemoveLog(fullPath)
 	}
 }
 
