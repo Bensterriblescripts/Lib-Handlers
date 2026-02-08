@@ -28,6 +28,7 @@ func GetWindowByTitle(title string) uintptr {
 
 	return r
 }
+
 // GetWindowTitle retrieves the title for the provided window handle.
 //
 // Example:
@@ -55,6 +56,7 @@ func GetWindowTitle(hwnd uintptr) string {
 
 	return windows.UTF16ToString(buf)
 }
+
 // GetAllActiveWindows returns a snapshot of visible windows.
 //
 // Example:
@@ -99,6 +101,7 @@ func GetWindowState(hwnd uintptr) string {
 		return "Windowed"
 	}
 }
+
 // GetWindowRect returns the bounding rectangle for a window.
 //
 // Example:
@@ -154,7 +157,7 @@ func SetBorderlessWindow(hwnd uintptr) {
 		return
 	}
 
-	newStyle := origStyle &^ uintptr(WS_OVERLAPPEDWINDOW)
+	newStyle := origStyle &^ uintptr(WS_OVERLAPPEDWINDOW) &^ uintptr(WS_MAXIMIZE)
 
 	r2, _, callErr := procSetWindowLongW.Call(
 		hwnd,
@@ -182,8 +185,8 @@ func SetBorderlessWindow(hwnd uintptr) {
 	)
 
 	window.WindowState = "Borderless"
-	SetVisible(hwnd)
 }
+
 // SetWindowWindowed restores a window to its original bounds.
 //
 // Example:
@@ -234,6 +237,7 @@ func SetWindowWindowed(hwnd uintptr) {
 	window.WindowState = "Windowed"
 	SetVisible(hwnd)
 }
+
 // SetWindowMinimised minimises the window.
 //
 // Example:
@@ -271,6 +275,7 @@ func SetWindowMinimised(hwnd uintptr) {
 
 	window.WindowState = "Minimised"
 }
+
 // SetFocus brings the window to the foreground and focuses it.
 //
 // Example:
@@ -294,6 +299,7 @@ func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from othe
 		return
 	}
 }
+
 // SetVisible restores a window without stealing focus.
 //
 // Example:
