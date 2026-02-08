@@ -7,6 +7,7 @@ import (
 /* Set these ones in main */
 var AppName string = "Default"
 var TraceDebug bool = true
+var FileLogging bool = true
 var ConsoleLogging bool = true
 var LoggingPath string = ""
 

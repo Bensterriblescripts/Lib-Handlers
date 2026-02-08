@@ -27,6 +27,8 @@ var traceLogWriter io.Writer
 //
 // - logging.TraceDebug (bool) (default: true)
 //
+// - logging.FileLogging (bool) (default: true) - Turns off all file logging, console logging will work if below is unset.
+//
 // - logging.ConsoleLogging (bool) (default: true)
 //
 // - logging.TraceLogRotation (int64 - days) (default: 3)
@@ -35,17 +37,38 @@ var traceLogWriter io.Writer
 func InitLogs() {
 	initVars()
 
-	if _, err := os.Stat(BaseLogsFolder); os.IsNotExist(err) {
-		PanicErr(os.MkdirAll(BaseLogsFolder, 0755))
-	}
-	go func() {
-		for {
-			RotateLogs(BaseLogsFolder)
-			time.Sleep(time.Duration(TraceLogRotation) * time.Minute)
+	if FileLogging {
+		if _, err := os.Stat(BaseLogsFolder); os.IsNotExist(err) {
+			PanicErr(os.MkdirAll(BaseLogsFolder, 0755))
 		}
-	}()
+
+		if FileLogging {
+			go func() {
+				for {
+					RotateLogs(BaseLogsFolder)
+					time.Sleep(time.Duration(TraceLogRotation) * time.Minute)
+				}
+			}()
+		}
+	}
 }
 func initVars() {
+	if runtime.GOOS == "windows" {
+		UserProfile = os.Getenv("USERPROFILE")
+		if UserProfile == "" {
+			ErrorLog("Unable to locate the user's profile name.")
+		}
+	} else {
+		UserProfile = PanicError(os.UserHomeDir())
+		if UserProfile == "" {
+			ErrorLog("Unable to locate the user's home directory.")
+		}
+	}
+
+	if !FileLogging {
+		return
+	}
+
 	if LoggingPath != "" {
 		if runtime.GOOS == "windows" {
 			BaseLogsFolder = LoggingPath + "\\"
@@ -54,13 +77,8 @@ func initVars() {
 		}
 	} else {
 		if runtime.GOOS == "windows" {
-			UserProfile = os.Getenv("USERPROFILE")
-			if UserProfile == "" {
-				Panic("Unable to locate the user's profile name.")
-			}
 			BaseLogsFolder = "C:\\Local\\Logs\\" + AppName + "\\"
 		} else {
-			UserProfile = PanicError(os.UserHomeDir())
 			BaseLogsFolder = UserProfile + "/local/Logs/" + AppName + "/"
 		}
 	}
@@ -145,6 +163,10 @@ func InitTraceLog(filename string) {
 //
 // The new logs folder will sit under AppName/StringPassedIn
 func SetLogsFolder(foldername string) {
+	if !FileLogging {
+		return
+	}
+
 	currentday := GetDay()
 
 	var ErrorPath string
@@ -188,6 +210,12 @@ func SetLogsFolder(foldername string) {
 //
 //	logging.ErrorLog("failed to connect to db")
 func ErrorLog(message string) {
+	if !FileLogging {
+		if ConsoleLogging {
+			fmt.Println(message)
+		}
+		return
+	}
 	if ErrorLogFile == nil {
 		currentday := GetDay()
 		InitErrorLog(BaseLogsFolder + "errors-" + currentday + ".log")
@@ -206,6 +234,12 @@ func ErrorLog(message string) {
 //
 //	logging.ChangeLog("updated user profile", "user-123")
 func ChangeLog(message string, idnumber string) {
+	if !FileLogging {
+		if ConsoleLogging {
+			fmt.Println(message)
+		}
+		return
+	}
 	if ChangeLogFile == nil {
 		currentday := GetDay()
 		InitChangeLog(BaseLogsFolder + "changes-" + currentday + ".log")
@@ -227,6 +261,12 @@ func ChangeLog(message string, idnumber string) {
 //
 //	logging.TraceLog("starting background job")
 func TraceLog(message string) {
+	if !FileLogging {
+		if ConsoleLogging {
+			fmt.Println(message)
+		}
+		return
+	}
 	if !TraceDebug {
 		return
 	}
@@ -292,6 +332,9 @@ func PrintLogs(message string, errorlevel int) {
 //
 //	RotateLogs(BaseLogsFolder) // Immediately rotate - Change the folder path for subfolder rotation
 func RotateLogs(logFolder string) {
+	if !FileLogging {
+		return
+	}
 	files, err := os.ReadDir(logFolder)
 	if err != nil || len(files) == 0 {
 		return
@@ -370,6 +413,9 @@ func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 //
 //	logging.RemoveLog("C:\\Local\\Logs\\app\\trace-2024-1-1.log")
 func RemoveLog(fullPath string) {
+	if !FileLogging {
+		return
+	}
 	TraceLog("Removing log file: " + fullPath)
 	PrintErr(os.Remove(fullPath))
 }
