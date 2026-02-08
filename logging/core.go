@@ -40,7 +40,6 @@ func InitLogs() {
 	}
 	go func() {
 		for {
-			// time.Sleep(30 * time.Second)
 			RotateLogs(BaseLogsFolder)
 			time.Sleep(time.Duration(TraceLogRotation) * time.Minute)
 		}
@@ -291,12 +290,7 @@ func PrintLogs(message string, errorlevel int) {
 //
 // Example Usage:
 //
-//	go func() {
-//		for {
-//			RotateLogs(BaseLogsFolder) // Immediately rotate - Change the folder path for subfolder rotation
-//			time.Sleep(time.Duration(TraceLogRotation) * time.Day) // Wait for the next rotation in long running apps
-//		}
-//	}()
+//	RotateLogs(BaseLogsFolder) // Immediately rotate - Change the folder path for subfolder rotation
 func RotateLogs(logFolder string) {
 	files, err := os.ReadDir(logFolder)
 	if err != nil || len(files) == 0 {
