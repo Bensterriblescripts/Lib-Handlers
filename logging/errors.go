@@ -2,7 +2,6 @@ package logging
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"reflect"
 	"runtime/debug"
@@ -125,36 +124,18 @@ func WrapPanic(fn func() error) {
 func Panic(message string) {
 	message = RetrieveLatestCaller(message)
 
-	fileWriters := []io.Writer{os.Stdout}
-	if TraceLogFile != nil {
-		fileWriters = append(fileWriters, TraceLogFile)
-	}
-	if ErrorLogFile != nil {
-		fileWriters = append(fileWriters, ErrorLogFile)
-	}
-	multiWriter := io.MultiWriter(fileWriters...)
-
-	if len(fileWriters) > 0 {
+	if FileLogging {
 		stackTrace := string(debug.Stack())
 		message = stackTrace + "\n" + message
-		if _, err := fmt.Fprintln(multiWriter, message); err != nil {
-			fmt.Println("Error writing to the error log during panic, despite the a multiwriter being available")
+		if _, err := fmt.Fprintln(errorLogWriter, message); err != nil {
+			fmt.Println("Error writing to the errorlog during panic, reverting to console logging.")
+			ConsoleLogging = true
+			FileLogging = false
 			fmt.Println(message)
 			os.Exit(512)
 		}
-	} else {
-		fmt.Println(message)
 	}
-	if ErrorLogFile != nil {
-		fmt.Fprintln(ErrorLogFile, "Panic Shutdown")
-		ErrorLogFile.Close()
-	}
-	if ChangeLogFile != nil {
-		ChangeLogFile.Close()
-	}
-	if TraceLogFile != nil {
-		TraceLogFile.Close()
-	}
+	CloseLogs()
 	os.Exit(512)
 }
 

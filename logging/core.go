@@ -20,25 +20,42 @@ var traceLogWriter io.Writer
 // CloseLogs writes a final trace entry, disables file logging, and closes all log files.
 // Must be used instead of manually closing log files to avoid circular logging on close errors.
 func CloseLogs() {
-	if TraceLogFile != nil && TraceDebug && FileLogging {
-		TraceLog("Clean Shutdown")
-	}
-
 	FileLogging = false
+	ConsoleLogging = true
 
 	if ChangeLogFile != nil {
-		ChangeLogFile.Close()
-		ChangeLogFile = nil
+		if _, err := os.Stat(ChangeLogFile.Name()); err != nil {
+			ErrorLog("Failed to stat the change log file: " + err.Error())
+			ChangeLogFile = nil
+		} else {
+			if err := ChangeLogFile.Close(); err != nil {
+				ErrorLog("Failed to close the change log file: " + err.Error())
+			}
+			ChangeLogFile = nil
+		}
 	}
 	if TraceLogFile != nil {
-		TraceLogFile.Close()
-		TraceLogFile = nil
+		if _, err := os.Stat(TraceLogFile.Name()); err != nil {
+			ErrorLog("Failed to stat the trace log file: " + err.Error())
+			TraceLogFile = nil
+		} else {
+			if err := TraceLogFile.Close(); err != nil {
+				ErrorLog("Failed to close the trace log file: " + err.Error())
+			}
+			TraceLogFile = nil
+		}
 	}
 	if ErrorLogFile != nil {
-		ErrorLogFile.Close()
-		ErrorLogFile = nil
+		if _, err := os.Stat(ErrorLogFile.Name()); err != nil {
+			ErrorLog("Failed to stat the error log file: " + err.Error())
+			ErrorLogFile = nil
+		} else {
+			if err := ErrorLogFile.Close(); err != nil {
+				ErrorLog("Failed to close the error log file: " + err.Error())
+			}
+			ErrorLogFile = nil
+		}
 	}
-
 	errorLogWriter = nil
 	changeLogWriter = nil
 	traceLogWriter = nil
@@ -250,12 +267,16 @@ func ErrorLog(message string) {
 		currentday := GetDay()
 		InitErrorLog(BaseLogsFolder + "errors-" + currentday + ".log")
 		if ErrorLogFile == nil {
-			Panic("ErrorLogFile is nil")
+			fmt.Println("ErrorLogFile is nil. Logging to console.")
+			ConsoleLogging = true
+			FileLogging = false
+			fmt.Println(message)
+			return
 		}
 	}
 
 	message = RetrieveLatestCaller(message)
-	PrintLogs(message, 0)
+	PrintLogs(message, errorLogWriter)
 }
 
 // Write to the change log and stdout if ConsoleLogging is set to true.
@@ -274,7 +295,11 @@ func ChangeLog(message string, idnumber string) {
 		currentday := GetDay()
 		InitChangeLog(BaseLogsFolder + "changes-" + currentday + ".log")
 		if ChangeLogFile == nil {
-			Panic("ChangeLogFile is nil")
+			fmt.Println("ChangeLogFile is nil. Logging to console.")
+			ConsoleLogging = true
+			FileLogging = false
+			fmt.Println(message)
+			return
 		}
 	}
 
@@ -282,7 +307,7 @@ func ChangeLog(message string, idnumber string) {
 	if idnumber != "" {
 		message = message + " || " + idnumber
 	}
-	PrintLogs(message, 1)
+	PrintLogs(message, changeLogWriter)
 }
 
 // Write to the trace log and stdout if ConsoleLogging is set to true.
@@ -304,11 +329,15 @@ func TraceLog(message string) {
 		currentday := GetDay()
 		InitTraceLog(BaseLogsFolder + "trace-" + currentday + ".log")
 		if TraceLogFile == nil {
-			Panic("TraceLogFile is nil")
+			fmt.Println("TraceLogFile is nil. Logging to console.")
+			ConsoleLogging = true
+			FileLogging = false
+			fmt.Println(message)
+			return
 		}
 	}
 	message = RetrieveLatestCaller(message)
-	PrintLogs(message, 2)
+	PrintLogs(message, traceLogWriter)
 }
 
 // RetrieveLatestCaller formats a log message with caller details.
@@ -344,15 +373,18 @@ func RetrieveLatestCaller(message string) string {
 //
 // Example:
 //
-//	logging.PrintLogs("system online", 2)
-func PrintLogs(message string, errorlevel int) {
-	switch errorlevel {
-	case 0:
-		PanicError(fmt.Fprintln(errorLogWriter, message))
-	case 1:
-		PanicError(fmt.Fprintln(changeLogWriter, message))
-	case 2:
-		PanicError(fmt.Fprintln(traceLogWriter, message))
+//	logging.PrintLogs("system online", traceLogWriter)
+func PrintLogs(message string, writer io.Writer) {
+	if _, err := fmt.Fprintln(writer, message); err != nil {
+		if ConsoleLogging {
+			Panic("File logging failed due to an error, reverting to console logging.")
+		}
+
+		fmt.Println("File logging failed due to an error, reverting to console logging.")
+		fmt.Println(message)
+		ConsoleLogging = true
+		FileLogging = false
+		return
 	}
 }
 
