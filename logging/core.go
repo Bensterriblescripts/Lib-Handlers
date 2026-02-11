@@ -17,6 +17,33 @@ var errorLogWriter io.Writer
 var changeLogWriter io.Writer
 var traceLogWriter io.Writer
 
+// CloseLogs writes a final trace entry, disables file logging, and closes all log files.
+// Must be used instead of manually closing log files to avoid circular logging on close errors.
+func CloseLogs() {
+	if TraceLogFile != nil && TraceDebug && FileLogging {
+		TraceLog("Clean Shutdown")
+	}
+
+	FileLogging = false
+
+	if ChangeLogFile != nil {
+		ChangeLogFile.Close()
+		ChangeLogFile = nil
+	}
+	if TraceLogFile != nil {
+		TraceLogFile.Close()
+		TraceLogFile = nil
+	}
+	if ErrorLogFile != nil {
+		ErrorLogFile.Close()
+		ErrorLogFile = nil
+	}
+
+	errorLogWriter = nil
+	changeLogWriter = nil
+	traceLogWriter = nil
+}
+
 // Initialize all logging files and variables
 //
 // # The following must be set before calling:
@@ -178,9 +205,9 @@ func SetLogsFolder(foldername string) {
 		ChangePath = BaseLogsFolder + "changes-" + currentday + ".log"
 		TracePath = BaseLogsFolder + "trace-" + currentday + ".log"
 	} else {
-		ErrorPath = BaseLogsFolder + foldername + "\\" + "errors-" + currentday + ".log"
-		ChangePath = BaseLogsFolder + foldername + "\\" + "changes-" + currentday + ".log"
-		TracePath = BaseLogsFolder + foldername + "\\" + "trace-" + currentday + ".log"
+		ErrorPath = BaseLogsFolder + foldername + string(filepath.Separator) + "errors-" + currentday + ".log"
+		ChangePath = BaseLogsFolder + foldername + string(filepath.Separator) + "changes-" + currentday + ".log"
+		TracePath = BaseLogsFolder + foldername + string(filepath.Separator) + "trace-" + currentday + ".log"
 	}
 	if _, err := os.Stat(BaseLogsFolder + foldername); os.IsNotExist(err) {
 		PanicErr(os.MkdirAll(BaseLogsFolder+foldername, 0755))
@@ -188,18 +215,21 @@ func SetLogsFolder(foldername string) {
 
 	if ErrorLogFile != nil && ErrorPath != ErrorLogFile.Name() {
 		PanicErr(ErrorLogFile.Close())
+		ErrorLogFile = nil // prevent double close in InitErrorLog
 		InitErrorLog(ErrorPath)
 	} else if ErrorLogFile == nil {
 		InitErrorLog(ErrorPath)
 	}
 	if ChangeLogFile != nil && ChangePath != ChangeLogFile.Name() {
 		PanicErr(ChangeLogFile.Close())
+		ChangeLogFile = nil // prevent double close in InitChangeLog
 		InitChangeLog(ChangePath)
 	} else if ChangeLogFile == nil {
 		InitChangeLog(ChangePath)
 	}
 	if TraceLogFile != nil && TracePath != TraceLogFile.Name() {
 		PanicErr(TraceLogFile.Close())
+		TraceLogFile = nil // prevent double close in InitTraceLog
 		InitTraceLog(TracePath)
 	}
 }
@@ -341,7 +371,7 @@ func RotateLogs(logFolder string) {
 	} else {
 		for _, file := range files {
 			if file.IsDir() {
-				RotateLogs(logFolder + file.Name())
+				RotateLogs(filepath.Join(logFolder, file.Name()))
 				continue
 			}
 

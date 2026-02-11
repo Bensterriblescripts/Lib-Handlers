@@ -137,22 +137,23 @@ func Panic(message string) {
 	if len(fileWriters) > 0 {
 		stackTrace := string(debug.Stack())
 		message = stackTrace + "\n" + message
-		if _, failed := ErrorExists(fmt.Fprintln(multiWriter, message)); failed {
+		if _, err := fmt.Fprintln(multiWriter, message); err != nil {
 			fmt.Println("Error writing to the error log during panic, despite the a multiwriter being available")
-			return
+			fmt.Println(message)
+			os.Exit(512)
 		}
 	} else {
 		fmt.Println(message)
 	}
 	if ErrorLogFile != nil {
-		TraceLog("Panic Shutdown")
-		PrintErr(ErrorLogFile.Close())
+		fmt.Fprintln(ErrorLogFile, "Panic Shutdown")
+		ErrorLogFile.Close()
 	}
 	if ChangeLogFile != nil {
-		PrintErr(ChangeLogFile.Close())
+		ChangeLogFile.Close()
 	}
 	if TraceLogFile != nil {
-		PrintErr(TraceLogFile.Close())
+		TraceLogFile.Close()
 	}
 	os.Exit(512)
 }
