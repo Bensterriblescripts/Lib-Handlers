@@ -123,16 +123,13 @@ func WrapPanic(fn func() error) {
 // Closes all log files and exits with code 512
 func Panic(message string) {
 	message = RetrieveLatestCaller(message)
+	stackTrace := string(debug.Stack())
 
-	if FileLogging {
-		stackTrace := string(debug.Stack())
-		message = stackTrace + "\n" + message
-		if _, err := fmt.Fprintln(errorLogWriter, message); err != nil {
-			fmt.Println("Error writing to the errorlog during panic, reverting to console logging.")
-			ConsoleLogging = true
-			FileLogging = false
-			fmt.Println(message)
-			os.Exit(512)
+	fmt.Println(stackTrace + "\n" + message)
+
+	if FileLogging && ErrorLogFile != nil {
+		if _, err := fmt.Fprintln(ErrorLogFile, stackTrace+"\n"+message); err != nil {
+			fmt.Println("Error writing to the errorlog during panic.")
 		}
 	}
 	CloseLogs()
@@ -145,6 +142,13 @@ func Panic(message string) {
 //		Assert(10, 10)
 //	}
 func Assert(value1 any, value2 any) {
+	if value1 == nil || value2 == nil {
+		if value1 == nil && value2 == nil {
+			return
+		}
+		Panic("Assertion Failed - One value is nil, the other is not")
+		return
+	}
 	if reflect.TypeOf(value1) != reflect.TypeOf(value2) {
 		Panic("Assertion Failed - Types Mismatch `" + reflect.TypeOf(value1).Name() + "` `" + reflect.TypeOf(value2).Name() + "`")
 	} else if !reflect.DeepEqual(value1, value2) {

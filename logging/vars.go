@@ -13,8 +13,9 @@ var LoggingPath string = ""
 
 /* Automatically Set and Optional */
 var UserProfile string
-var TraceLogRotation int64 = 3     // Time between trace log rotation - days
-var PriorityLogRotation int64 = 14 // Time between change/error log rotation - days
+var RotationCheckInterval int64 = 360 // Time between rotation checks - minutes
+var TraceLogRotation int64 = 3        // Max age of trace logs - days
+var PriorityLogRotation int64 = 14    // Max age of change/error logs - days
 
 var BaseLogsFolder string
 var ErrorLogFile *os.File

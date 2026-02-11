@@ -12,6 +12,7 @@ import "time"
 func GetTime() string {
 	return time.Now().Local().Format(time.Kitchen)
 }
+
 // GetUnixTime returns the current UTC Unix timestamp.
 //
 // Example:
@@ -20,6 +21,7 @@ func GetTime() string {
 func GetUnixTime() int64 {
 	return time.Now().UTC().Unix()
 }
+
 // GetTimestamp returns the current UTC timestamp string.
 //
 // Example:
@@ -28,12 +30,13 @@ func GetUnixTime() int64 {
 func GetTimestamp() string {
 	return time.Now().UTC().Format("2006-01-02 15:04:05.000")
 }
+
 // GetFullDateTime returns a short local date/time string.
 //
 // Example:
 //
 //	display := time.GetFullDateTime()
-func GetFullDateTime() string {
+func GetFullDayTime() string {
 	return time.Now().Local().Format("2/1/06 3:04pm")
 }
 
@@ -45,6 +48,7 @@ func GetFullDateTime() string {
 func GetDay() string {
 	return time.Now().UTC().Format("2006-1-2")
 }
+
 // GetDateArray returns the local day, month, and year values.
 //
 // Example:

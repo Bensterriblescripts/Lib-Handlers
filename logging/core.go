@@ -27,38 +27,41 @@ func CloseLogs() {
 		if _, err := os.Stat(ChangeLogFile.Name()); err != nil {
 			ErrorLog("Failed to stat the change log file: " + err.Error())
 			ChangeLogFile = nil
+			changeLogWriter = nil
 		} else {
 			if err := ChangeLogFile.Close(); err != nil {
 				ErrorLog("Failed to close the change log file: " + err.Error())
 			}
 			ChangeLogFile = nil
+			changeLogWriter = nil
 		}
 	}
 	if TraceLogFile != nil {
 		if _, err := os.Stat(TraceLogFile.Name()); err != nil {
 			ErrorLog("Failed to stat the trace log file: " + err.Error())
 			TraceLogFile = nil
+			traceLogWriter = nil
 		} else {
 			if err := TraceLogFile.Close(); err != nil {
 				ErrorLog("Failed to close the trace log file: " + err.Error())
 			}
 			TraceLogFile = nil
+			traceLogWriter = nil
 		}
 	}
 	if ErrorLogFile != nil {
 		if _, err := os.Stat(ErrorLogFile.Name()); err != nil {
 			ErrorLog("Failed to stat the error log file: " + err.Error())
 			ErrorLogFile = nil
+			errorLogWriter = nil
 		} else {
 			if err := ErrorLogFile.Close(); err != nil {
 				ErrorLog("Failed to close the error log file: " + err.Error())
 			}
 			ErrorLogFile = nil
+			errorLogWriter = nil
 		}
 	}
-	errorLogWriter = nil
-	changeLogWriter = nil
-	traceLogWriter = nil
 }
 
 // Initialize all logging files and variables
@@ -75,6 +78,8 @@ func CloseLogs() {
 //
 // - logging.ConsoleLogging (bool) (default: true)
 //
+// - logging.RotationCheckInterval (int64 - minutes) (default: 360)
+//
 // - logging.TraceLogRotation (int64 - days) (default: 3)
 //
 // - logging.PriorityLogRotation (int64 - days) (default: 14)
@@ -86,14 +91,12 @@ func InitLogs() {
 			PanicErr(os.MkdirAll(BaseLogsFolder, 0755))
 		}
 
-		if FileLogging {
-			go func() {
-				for {
-					RotateLogs(BaseLogsFolder)
-					time.Sleep(time.Duration(TraceLogRotation) * time.Minute)
-				}
-			}()
-		}
+		go func() {
+			for {
+				RotateLogs(BaseLogsFolder)
+				time.Sleep(time.Duration(RotationCheckInterval) * time.Minute)
+			}
+		}()
 	}
 }
 func initVars() {
@@ -248,6 +251,8 @@ func SetLogsFolder(foldername string) {
 		PanicErr(TraceLogFile.Close())
 		TraceLogFile = nil // prevent double close in InitTraceLog
 		InitTraceLog(TracePath)
+	} else if TraceLogFile == nil {
+		InitTraceLog(TracePath)
 	}
 }
 
@@ -264,14 +269,27 @@ func ErrorLog(message string) {
 		return
 	}
 	if ErrorLogFile == nil {
-		currentday := GetDay()
-		InitErrorLog(BaseLogsFolder + "errors-" + currentday + ".log")
-		if ErrorLogFile == nil {
-			fmt.Println("ErrorLogFile is nil. Logging to console.")
+		if BaseLogsFolder == "" {
+			fmt.Println("BaseLogsFolder is empty, falling back to console-only logging")
 			ConsoleLogging = true
 			FileLogging = false
 			fmt.Println(message)
 			return
+		}
+		currentday := GetDay()
+		f, err := os.OpenFile(BaseLogsFolder+"errors-"+currentday+".log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Println("Failed to open error log file: " + err.Error())
+			ConsoleLogging = true
+			FileLogging = false
+			fmt.Println(message)
+			return
+		}
+		ErrorLogFile = f
+		if ConsoleLogging {
+			errorLogWriter = io.MultiWriter(os.Stdout, ErrorLogFile)
+		} else {
+			errorLogWriter = ErrorLogFile
 		}
 	}
 
@@ -292,14 +310,27 @@ func ChangeLog(message string, idnumber string) {
 		return
 	}
 	if ChangeLogFile == nil {
-		currentday := GetDay()
-		InitChangeLog(BaseLogsFolder + "changes-" + currentday + ".log")
-		if ChangeLogFile == nil {
-			fmt.Println("ChangeLogFile is nil. Logging to console.")
+		if BaseLogsFolder == "" {
+			fmt.Println("BaseLogsFolder is empty, falling back to console-only logging")
 			ConsoleLogging = true
 			FileLogging = false
 			fmt.Println(message)
 			return
+		}
+		currentday := GetDay()
+		f, err := os.OpenFile(BaseLogsFolder+"changes-"+currentday+".log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Println("Failed to open change log file: " + err.Error())
+			ConsoleLogging = true
+			FileLogging = false
+			fmt.Println(message)
+			return
+		}
+		ChangeLogFile = f
+		if ConsoleLogging {
+			changeLogWriter = io.MultiWriter(os.Stdout, ChangeLogFile)
+		} else {
+			changeLogWriter = ChangeLogFile
 		}
 	}
 
@@ -326,47 +357,66 @@ func TraceLog(message string) {
 		return
 	}
 	if TraceLogFile == nil {
-		currentday := GetDay()
-		InitTraceLog(BaseLogsFolder + "trace-" + currentday + ".log")
-		if TraceLogFile == nil {
-			fmt.Println("TraceLogFile is nil. Logging to console.")
+		if BaseLogsFolder == "" {
+			fmt.Println("BaseLogsFolder is empty, falling back to console-only logging")
 			ConsoleLogging = true
 			FileLogging = false
 			fmt.Println(message)
 			return
+		}
+		currentday := GetDay()
+		f, err := os.OpenFile(BaseLogsFolder+"trace-"+currentday+".log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Println("Failed to open trace log file: " + err.Error())
+			ConsoleLogging = true
+			FileLogging = false
+			fmt.Println(message)
+			return
+		}
+		TraceLogFile = f
+		if ConsoleLogging {
+			traceLogWriter = io.MultiWriter(os.Stdout, TraceLogFile)
+		} else {
+			traceLogWriter = TraceLogFile
 		}
 	}
 	message = RetrieveLatestCaller(message)
 	PrintLogs(message, traceLogWriter)
 }
 
-// RetrieveLatestCaller formats a log message with caller details.
+// RetrieveLatestCaller formats a log message with the first caller outside the logging package.
 //
 // Example:
 //
 //	withCaller := logging.RetrieveLatestCaller("starting worker")
 func RetrieveLatestCaller(message string) string {
-	pc, _, callerline, ok := runtime.Caller(1)
-	if !ok {
-		return fmt.Sprintf("%s || NO CALLER || %s", GetTime(), message)
-	}
-	caller := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+	for skip := 1; skip <= 10; skip++ {
+		pc, _, line, ok := runtime.Caller(skip)
+		if !ok {
+			break
+		}
+		fullName := runtime.FuncForPC(pc).Name()
 
-	pc2, _, callerline2, ok2 := runtime.Caller(2)
-	if !ok2 {
-		return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", caller[0], caller[1], callerline), message)
-	}
-	caller2 := strings.Split(runtime.FuncForPC(pc2).Name(), ".")
-	caller2[1] = strings.Replace(caller2[1], "[", "", 1)
+		// Extract the short package.Function portion after the last /
+		shortName := fullName
+		if lastSlash := strings.LastIndex(fullName, "/"); lastSlash >= 0 {
+			shortName = fullName[lastSlash+1:]
+		}
+		if strings.HasPrefix(shortName, "logging.") {
+			continue
+		}
 
-	pc3, _, callerline3, ok3 := runtime.Caller(3)
-	if !ok3 {
-		return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", caller2[0], caller2[1], callerline2), message)
-	}
-	caller3 := strings.Split(runtime.FuncForPC(pc3).Name(), ".")
-	caller3[1] = strings.Replace(caller3[1], "[", "", 1)
+		// Split on the last dot to separate package path from function name
+		lastDot := strings.LastIndex(fullName, ".")
+		pkg := fullName[:lastDot]
+		funcName := fullName[lastDot+1:]
+		if idx := strings.Index(funcName, "["); idx >= 0 {
+			funcName = funcName[:idx]
+		}
 
-	return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", caller3[0], caller3[1], callerline3), message)
+		return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", pkg, funcName, line), message)
+	}
+	return fmt.Sprintf("%s || NO CALLER || %s", GetTime(), message)
 }
 
 // PrintLogs writes the message to the requested log stream.
@@ -376,10 +426,6 @@ func RetrieveLatestCaller(message string) string {
 //	logging.PrintLogs("system online", traceLogWriter)
 func PrintLogs(message string, writer io.Writer) {
 	if _, err := fmt.Fprintln(writer, message); err != nil {
-		if ConsoleLogging {
-			Panic("File logging failed due to an error, reverting to console logging.")
-		}
-
 		fmt.Println("File logging failed due to an error, reverting to console logging.")
 		fmt.Println(message)
 		ConsoleLogging = true
@@ -408,6 +454,9 @@ func RotateLogs(logFolder string) {
 			}
 
 			logSplit := strings.Split(file.Name(), "-")
+			if len(logSplit) < 4 {
+				continue
+			}
 			logType := logSplit[0]
 			logYear := logSplit[1]
 			logMonth := logSplit[2]
@@ -476,6 +525,11 @@ func clearOutdatedLogs(fullPath string, logStringYear string, logStringMonth str
 //	logging.RemoveLog("C:\\Local\\Logs\\app\\trace-2024-1-1.log")
 func RemoveLog(fullPath string) {
 	if !FileLogging {
+		return
+	}
+	if (ErrorLogFile != nil && fullPath == ErrorLogFile.Name()) ||
+		(ChangeLogFile != nil && fullPath == ChangeLogFile.Name()) ||
+		(TraceLogFile != nil && fullPath == TraceLogFile.Name()) {
 		return
 	}
 	TraceLog("Removing log file: " + fullPath)
