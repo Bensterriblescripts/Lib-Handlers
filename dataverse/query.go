@@ -229,7 +229,7 @@ func sendRequest(url string, method string, data []byte) []byte {
 			}
 
 			if body, err := ErrorExists(io.ReadAll(resp.Body)); err { // Read response
-				ErrorLog("Failed to read response body")
+				ErrorLog("Failed to read response body: " + url)
 				return nil
 			} else {
 				if VerboseLogging {
@@ -238,7 +238,19 @@ func sendRequest(url string, method string, data []byte) []byte {
 					TraceLog("----------")
 				}
 				if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-					ErrorLog(fmt.Sprintf("HTTP Error %d: %s", resp.StatusCode, string(body)))
+					ErrorLog(fmt.Sprintf("HTTP Error %d for %s: %s", resp.StatusCode, url, string(body)))
+					return nil
+				}
+				if len(body) == 0 {
+					ErrorLog("Empty response body: " + url)
+					return nil
+				}
+				if body[0] != '{' && body[0] != '[' {
+					ErrorLog(fmt.Sprintf("Non-JSON response for %s: %.200s", url, string(body)))
+					return nil
+				}
+				if bytes.Contains(body, []byte(`"error":{`)) {
+					ErrorLog(fmt.Sprintf("Dataverse error for %s: %s", url, string(body)))
 					return nil
 				}
 				return body
