@@ -41,6 +41,16 @@ func GetPastTimestamp(minutes int) string {
 }
 
 //
+// GetPastTimestampSeconds returns the UTC timestamp string minus the number of seconds specified.
+//
+// Example:
+//
+//	ts := time.GetPastTimestampSeconds(10) // 10 seconds ago
+func GetPastTimestampSeconds(seconds int) string {
+	return time.Now().UTC().Add(-time.Second * time.Duration(seconds)).Format("2006-01-02 15:04:05.000")
+}
+
+//
 // GetFutureTimestamp returns the UTC timestamp string plus the number of minutes specified.
 //
 // Example:
@@ -48,6 +58,16 @@ func GetPastTimestamp(minutes int) string {
 //	ts := time.GetFutureTimestamp(10) // 10 minutes from now
 func GetFutureTimestamp(minutes int) string {
 	return time.Now().UTC().Add(time.Minute * time.Duration(minutes)).Format("2006-01-02 15:04:05.000")
+}
+
+//
+// GetFutureTimestampSeconds returns the UTC timestamp string plus the number of seconds specified.
+//
+// Example:
+//
+//	ts := time.GetFutureTimestampSeconds(10) // 10 seconds from now
+func GetFutureTimestampSeconds(seconds int) string {
+	return time.Now().UTC().Add(time.Second * time.Duration(seconds)).Format("2006-01-02 15:04:05.000")
 }
 
 // GetFullDateTime returns a short local date/time string.
