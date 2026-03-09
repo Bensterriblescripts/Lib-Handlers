@@ -419,7 +419,11 @@ func RetrieveLatestCaller(message string) string {
 		if !ok {
 			break
 		}
-		fullName := runtime.FuncForPC(pc).Name()
+		fn := runtime.FuncForPC(pc)
+		if fn == nil {
+			continue
+		}
+		fullName := fn.Name()
 
 		// Extract the short package.Function portion after the last /
 		shortName := fullName
@@ -432,15 +436,33 @@ func RetrieveLatestCaller(message string) string {
 
 		// Split on the last dot to separate package path from function name
 		lastDot := strings.LastIndex(fullName, ".")
+		if lastDot < 0 {
+			return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s):%d", normalizeCallerPackagePath(fullName), line), message)
+		}
 		pkg := fullName[:lastDot]
 		funcName := fullName[lastDot+1:]
 		if idx := strings.Index(funcName, "["); idx >= 0 {
 			funcName = funcName[:idx]
 		}
+		pkg = normalizeCallerPackagePath(pkg)
 
 		return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", pkg, funcName, line), message)
 	}
 	return fmt.Sprintf("%s || NO CALLER || %s", GetTime(), message)
+}
+
+func normalizeCallerPackagePath(pkg string) string {
+	const moduleName = "Lib-Handlers"
+
+	moduleIdx := strings.Index(pkg, "/"+moduleName)
+	if moduleIdx >= 0 {
+		return pkg[moduleIdx+1:]
+	}
+	if strings.HasPrefix(pkg, moduleName) {
+		return pkg
+	}
+
+	return pkg
 }
 
 // PrintLogs writes the message to the requested log stream.
