@@ -17,6 +17,54 @@ var errorLogWriter io.Writer
 var changeLogWriter io.Writer
 var traceLogWriter io.Writer
 
+const (
+	consoleColorReset  = "\033[0m"
+	consoleColorRed    = "\033[31m"
+	consoleColorYellow = "\033[33m"
+	consoleColorBlue   = "\033[34m"
+)
+
+type consoleColorWriter struct {
+	console io.Writer
+	file    io.Writer
+	color   string
+}
+
+func (w *consoleColorWriter) Write(p []byte) (int, error) {
+	if w.console != nil {
+		if _, err := fmt.Fprint(w.console, w.color+string(p)+consoleColorReset); err != nil {
+			return 0, err
+		}
+	}
+	if w.file != nil {
+		if _, err := w.file.Write(p); err != nil {
+			return 0, err
+		}
+	}
+	return len(p), nil
+}
+
+func buildLogWriter(file *os.File, color string) io.Writer {
+	if ConsoleLogging {
+		return &consoleColorWriter{
+			console: os.Stdout,
+			file:    file,
+			color:   color,
+		}
+	}
+	return file
+}
+
+func printConsoleLog(message string, color string) {
+	if !ConsoleLogging {
+		return
+	}
+	_, _ = fmt.Fprintln(&consoleColorWriter{
+		console: os.Stdout,
+		color:   color,
+	}, message)
+}
+
 // CloseLogs writes a final trace entry, disables file logging, and closes all log files.
 // Must be used instead of manually closing log files to avoid circular logging on close errors.
 func CloseLogs() {
@@ -146,11 +194,7 @@ func InitErrorLog(filename string) {
 		PrintErr(ErrorLogFile.Close())
 		ErrorLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	}
-	if ConsoleLogging {
-		errorLogWriter = io.MultiWriter(os.Stdout, ErrorLogFile)
-	} else {
-		errorLogWriter = ErrorLogFile
-	}
+	errorLogWriter = buildLogWriter(ErrorLogFile, consoleColorRed)
 }
 
 // Initialize the change log file, the file will be closed and reopened if it already exists.
@@ -169,11 +213,7 @@ func InitChangeLog(filename string) {
 		ChangeLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	}
 
-	if ConsoleLogging {
-		changeLogWriter = io.MultiWriter(os.Stdout, ChangeLogFile)
-	} else {
-		changeLogWriter = ChangeLogFile
-	}
+	changeLogWriter = buildLogWriter(ChangeLogFile, consoleColorYellow)
 }
 
 // Initialize the trace log file, the trace log will not be written to if TraceDebug is manually set to false.
@@ -195,11 +235,7 @@ func InitTraceLog(filename string) {
 		TraceLogFile = PanicError(os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666))
 	}
 
-	if ConsoleLogging {
-		traceLogWriter = io.MultiWriter(os.Stdout, TraceLogFile)
-	} else {
-		traceLogWriter = TraceLogFile
-	}
+	traceLogWriter = buildLogWriter(TraceLogFile, consoleColorBlue)
 }
 
 // Alter the current log folder path.
@@ -264,7 +300,7 @@ func SetLogsFolder(foldername string) {
 func ErrorLog(message string) {
 	if !FileLogging {
 		if ConsoleLogging {
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorRed)
 		}
 		return
 	}
@@ -273,7 +309,7 @@ func ErrorLog(message string) {
 			fmt.Println("BaseLogsFolder is empty, falling back to console-only logging")
 			ConsoleLogging = true
 			FileLogging = false
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorRed)
 			return
 		}
 		currentday := GetDay()
@@ -282,15 +318,11 @@ func ErrorLog(message string) {
 			fmt.Println("Failed to open error log file: " + err.Error())
 			ConsoleLogging = true
 			FileLogging = false
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorRed)
 			return
 		}
 		ErrorLogFile = f
-		if ConsoleLogging {
-			errorLogWriter = io.MultiWriter(os.Stdout, ErrorLogFile)
-		} else {
-			errorLogWriter = ErrorLogFile
-		}
+		errorLogWriter = buildLogWriter(ErrorLogFile, consoleColorRed)
 	}
 
 	message = RetrieveLatestCaller(message)
@@ -305,7 +337,7 @@ func ErrorLog(message string) {
 func ChangeLog(message string, idnumber string) {
 	if !FileLogging {
 		if ConsoleLogging {
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorYellow)
 		}
 		return
 	}
@@ -314,7 +346,7 @@ func ChangeLog(message string, idnumber string) {
 			fmt.Println("BaseLogsFolder is empty, falling back to console-only logging")
 			ConsoleLogging = true
 			FileLogging = false
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorYellow)
 			return
 		}
 		currentday := GetDay()
@@ -323,15 +355,11 @@ func ChangeLog(message string, idnumber string) {
 			fmt.Println("Failed to open change log file: " + err.Error())
 			ConsoleLogging = true
 			FileLogging = false
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorYellow)
 			return
 		}
 		ChangeLogFile = f
-		if ConsoleLogging {
-			changeLogWriter = io.MultiWriter(os.Stdout, ChangeLogFile)
-		} else {
-			changeLogWriter = ChangeLogFile
-		}
+		changeLogWriter = buildLogWriter(ChangeLogFile, consoleColorYellow)
 	}
 
 	message = RetrieveLatestCaller(message)
@@ -349,7 +377,7 @@ func ChangeLog(message string, idnumber string) {
 func TraceLog(message string) {
 	if !FileLogging {
 		if ConsoleLogging {
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorBlue)
 		}
 		return
 	}
@@ -361,7 +389,7 @@ func TraceLog(message string) {
 			fmt.Println("BaseLogsFolder is empty, falling back to console-only logging")
 			ConsoleLogging = true
 			FileLogging = false
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorBlue)
 			return
 		}
 		currentday := GetDay()
@@ -370,15 +398,11 @@ func TraceLog(message string) {
 			fmt.Println("Failed to open trace log file: " + err.Error())
 			ConsoleLogging = true
 			FileLogging = false
-			fmt.Println(message)
+			printConsoleLog(message, consoleColorBlue)
 			return
 		}
 		TraceLogFile = f
-		if ConsoleLogging {
-			traceLogWriter = io.MultiWriter(os.Stdout, TraceLogFile)
-		} else {
-			traceLogWriter = TraceLogFile
-		}
+		traceLogWriter = buildLogWriter(TraceLogFile, consoleColorBlue)
 	}
 	message = RetrieveLatestCaller(message)
 	PrintLogs(message, traceLogWriter)
