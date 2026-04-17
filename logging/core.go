@@ -444,6 +444,13 @@ func RetrieveLatestCaller(message string) string {
 		if idx := strings.Index(funcName, "["); idx >= 0 {
 			funcName = funcName[:idx]
 		}
+		if lastSlash := strings.LastIndex(pkg, "/"); lastSlash >= 0 {
+			if receiverDot := strings.Index(pkg[lastSlash+1:], "."); receiverDot >= 0 {
+				pkg = pkg[:lastSlash+1+receiverDot]
+			}
+		} else if receiverDot := strings.Index(pkg, "."); receiverDot >= 0 {
+			pkg = pkg[:receiverDot]
+		}
 		pkg = normalizeCallerPackagePath(pkg)
 
 		return fmt.Sprintf("%s || %-60s || %s", GetTime(), fmt.Sprintf("(%s) %s:%d", pkg, funcName, line), message)
