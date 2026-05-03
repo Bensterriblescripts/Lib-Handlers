@@ -39,7 +39,6 @@ func SSHTunnel(client *ssh.Client, localAddr, remoteAddr string) net.Listener {
 					PrintErr(rcErr)
 				}
 
-				TraceLog("Closed SSH listening tunnel")
 			}()
 		}
 	}()
